@@ -1,556 +1,1560 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sahir's UK Postcode Checker</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Property Intel</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3e;
+    --text: #e8eaf0;
+    --muted: #8b8fa8;
+    --green: #4ade80;
+    --amber: #fb923c;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --cyan: #22d3ee;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
-      min-height: 100vh;
-    }
+  /* ── Header ──────────────────────────────────────────────────────────────── */
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo { font-size: 1.25rem; font-weight: 700; color: var(--blue); white-space: nowrap; flex-shrink: 0; padding-top: 6px; }
+  .logo span { color: var(--green); }
+  .search-col { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+  .search-label { font-size: .75rem; color: var(--muted); font-weight: 500; }
 
-    /* ── Header ── */
-    header {
-      background: #0d1b2a;
-      color: #fff;
-      padding: 2.5rem 1rem 2rem;
-      text-align: center;
-    }
-    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0.4rem; }
-    header .subtitle { font-size: 0.8rem; color: #8fa8c0; margin-bottom: 1.5rem; }
-    .search-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
-    #postcodeInput {
-      padding: 0.7rem 1.2rem; font-size: 1.1rem; border: none; border-radius: 8px;
-      width: 220px; text-transform: uppercase; outline: none;
-    }
-    #searchBtn {
-      padding: 0.7rem 1.6rem; font-size: 1rem; font-weight: 600;
-      background: #e76f51; color: #fff; border: none; border-radius: 8px;
-      cursor: pointer; transition: background 0.2s;
-    }
-    #searchBtn:hover { background: #cf5c3d; }
-    #searchBtn:disabled { background: #888; cursor: not-allowed; }
+  .address-wrap { position: relative; display: flex; gap: 8px; }
+  .address-wrap input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .address-wrap input:focus { border-color: var(--purple); }
+  .btn-addr-search {
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .2s;
+    flex-shrink: 0;
+  }
+  .btn-addr-search:hover { opacity: .85; }
+  .btn-addr-search:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* ── Grid ── */
-    #results {
-      display: none;
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem 3rem;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.25rem;
-    }
-    #results.visible { display: grid; }
-    @media (max-width: 700px) { #results { grid-template-columns: 1fr; } }
+  .address-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    z-index: 1000;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .address-dropdown.open { display: block; }
+  .address-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: .875rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .address-option:last-child { border-bottom: none; }
+  .address-option:hover { background: var(--border); }
+  .address-option-pc { font-weight: 600; color: var(--blue); flex-shrink: 0; }
+  .address-option-dist { color: var(--muted); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .addr-searching { padding: 10px 14px; color: var(--muted); font-size: .85rem; }
 
-    /* ── Card ── */
-    .card {
-      background: #fff; border: 1px solid #e0e6ed; border-radius: 12px;
-      padding: 1.4rem 1.6rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .card h2 {
-      font-size: 1rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; color: #4a5568; margin-bottom: 1rem;
-      border-bottom: 2px solid #f0f2f5; padding-bottom: 0.5rem;
-    }
+  .search-wrap { display: flex; gap: 8px; }
+  .search-wrap input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 1rem;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--blue); }
+  .search-wrap input.error { border-color: var(--red); }
+  .btn-search {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .2s;
+  }
+  .btn-search:hover { opacity: .85; }
+  .btn-search:disabled { opacity: .5; cursor: not-allowed; }
+  .error-msg { color: var(--red); font-size: .85rem; display: none; }
 
-    /* ── Spinner ── */
-    .spinner {
-      display: inline-block; width: 28px; height: 28px;
-      border: 3px solid #e0e6ed; border-top-color: #e76f51;
-      border-radius: 50%; animation: spin 0.7s linear infinite; margin: 1.5rem auto;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-wrap { display: flex; justify-content: center; }
+  /* ── Info button + panel ─────────────────────────────────────────────────── */
+  .btn-info {
+    background: var(--border);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: background .2s, border-color .2s;
+    position: relative;
+  }
+  .btn-info:hover { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .btn-info[aria-expanded="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
 
-    /* ── Location card ── */
-    .info-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; margin-bottom: 1rem;
-    }
-    .info-item label { font-size: 0.7rem; text-transform: uppercase; color: #8fa8c0; display: block; }
-    .info-item span { font-size: 0.95rem; font-weight: 600; }
-    .map-frame { width: 100%; height: 220px; border: none; border-radius: 8px; margin-top: 0.5rem; }
+  .info-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .info-overlay.open { display: flex; }
+  .info-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+  }
+  .info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .info-header h2 { font-size: 1.1rem; font-weight: 700; }
+  .btn-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color .2s;
+  }
+  .btn-close:hover { color: var(--text); }
+  .info-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .info-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .info-section-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .9rem; font-weight: 700; margin-bottom: 8px;
+  }
+  .info-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .info-desc { font-size: .85rem; color: var(--muted); line-height: 1.6; }
+  .info-formula {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: .8rem;
+    color: var(--blue);
+    font-family: monospace;
+    margin-top: 8px;
+    word-break: break-all;
+  }
+  .info-scale {
+    display: flex; gap: 0;
+    margin-top: 8px;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: .72rem;
+  }
+  .info-scale-seg {
+    flex: 1;
+    padding: 5px 4px;
+    text-align: center;
+    font-weight: 600;
+  }
 
-    /* ── Crime / chart summary ── */
-    .stat-summary { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; }
-    .stat-total { font-size: 2rem; font-weight: 800; }
-    .stat-label { font-size: 0.85rem; color: #666; }
-    .stat-sub { font-size: 0.78rem; color: #999; margin-bottom: 1rem; }
-    canvas { max-width: 100%; }
+  /* ── Main layout ─────────────────────────────────────────────────────────── */
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
 
-    /* ── Schools card ── */
-    .schools-table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th {
-      text-align: left; padding: 0.4rem 0.5rem; border-bottom: 2px solid #e0e6ed;
-      font-size: 0.72rem; text-transform: uppercase; color: #8fa8c0;
-    }
-    td { padding: 0.45rem 0.5rem; border-bottom: 1px solid #f0f2f5; }
-    tr:last-child td { border-bottom: none; }
-    .schools-note { font-size: 0.75rem; color: #999; margin-top: 0.8rem; }
-    .google-key-note { font-size: 0.75rem; color: #bbb; font-style: italic; }
+  .score-banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .score-banner.visible { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .score-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 4px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.6rem; font-weight: 700;
+    color: var(--muted);
+    transition: border-color .4s, color .4s;
+  }
+  .score-circle.amber { border-color: var(--amber); color: var(--amber); }
+  .score-circle.red { border-color: var(--red); color: var(--red); }
+  .score-circle.green { border-color: var(--green); color: var(--green); }
+  .score-info { flex: 1; min-width: 200px; }
+  .score-address { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .score-sub { color: var(--muted); font-size: .9rem; margin-bottom: 12px; }
+  .score-hint { font-size: .75rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
+  .score-bars { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; font-size: .8rem; position: relative; }
+  .bar-label { width: 96px; color: var(--muted); flex-shrink: 0; display: flex; align-items: center; gap: 5px; }
+  .bar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+  .bar-val { width: 30px; text-align: right; font-weight: 600; }
+  .bar-tip {
+    cursor: help;
+    color: var(--muted);
+    font-size: .75rem;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: .6;
+    transition: opacity .2s;
+  }
+  .bar-tip:hover { opacity: 1; }
+  /* Tooltip via title attr styled via browser default — supplemented with JS tooltip below */
 
-    /* ── Error / fallback ── */
-    .error-msg { font-size: 0.85rem; color: #999; font-style: italic; }
-    .error-msg a { color: #3a7bd5; }
-  </style>
+  /* ── Cards ───────────────────────────────────────────────────────────────── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* ── Skeletons ───────────────────────────────────────────────────────────── */
+  .skeleton { display: none; }
+  .skeleton.active { display: block; }
+  .skel-line {
+    background: linear-gradient(90deg, var(--border) 25%, #2e3244 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* ── Toast notifications ─────────────────────────────────────────────────── */
+  #toast-container {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 3000;
+    display: flex; flex-direction: column; gap: 8px;
+    max-width: 320px;
+  }
+  .toast {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: .85rem;
+    line-height: 1.4;
+    animation: toast-in .25s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  .toast-warn { border-color: var(--amber); color: var(--amber); }
+  .toast-error { border-color: var(--red); color: var(--red); }
+  .toast-info { border-color: var(--blue); color: var(--blue); }
+  @keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+  /* ── Data card content ───────────────────────────────────────────────────── */
+  .school-item { border-bottom: 1px solid var(--border); padding: 10px 0; }
+  .school-item:last-child { border-bottom: none; }
+  .school-name { font-weight: 600; font-size: .9rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .school-meta { font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
+  .school-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .pill-outstanding { background: #166534; color: #4ade80; }
+  .pill-good { background: #1e3a5f; color: #60a5fa; }
+  .pill-ri { background: #7c2d12; color: #fb923c; }
+  .pill-inadequate { background: #7f1d1d; color: #f87171; }
+  .pill-unknown { background: #2a2d3e; color: #8b8fa8; }
+  .pill-tga { background: #4c1d95; color: #a78bfa; }
+  .btn-locrating {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--blue);
+    font-size: .75rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: border-color .2s;
+  }
+  .btn-locrating:hover { border-color: var(--blue); }
+  .verify-link { font-size: .8rem; color: var(--purple); text-decoration: none; display: inline-block; margin-top: 12px; }
+  .verify-link:hover { text-decoration: underline; }
+
+  .crime-total { font-size: 2rem; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
+  .crime-label { color: var(--muted); font-size: .85rem; margin-bottom: 16px; }
+  .crime-cat { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+  .crime-cat:last-of-type { border-bottom: none; }
+  .crime-count { font-weight: 600; color: var(--amber); }
+  .crime-note { font-size: .78rem; color: var(--muted); margin-top: 12px; font-style: italic; }
+
+  .station-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+  .station-item:last-child { border-bottom: none; }
+  .station-name { font-weight: 600; }
+  .station-meta { text-align: right; }
+  .station-dist { color: var(--blue); font-weight: 600; font-size: .85rem; }
+  .station-walk { color: var(--muted); font-size: .75rem; }
+
+  .price-avg { font-size: 1.6rem; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+  .price-label { color: var(--muted); font-size: .85rem; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  th { color: var(--muted); font-weight: 600; text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .price-cell { font-weight: 600; color: var(--green); }
+
+  .flood-status { font-size: 1.1rem; font-weight: 700; padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
+  .flood-safe { background: #14532d; color: var(--green); }
+  .flood-warning { background: #7c2d12; color: var(--amber); }
+  .flood-high { background: #7f1d1d; color: var(--red); }
+  .flood-area-item { font-size: .82rem; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .flood-area-item:last-child { border-bottom: none; }
+
+  .area-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+  .area-row:last-child { border-bottom: none; }
+  .area-key { color: var(--muted); }
+  .area-val { font-weight: 600; text-align: right; max-width: 55%; word-break: break-word; }
+
+  /* ── Map ─────────────────────────────────────────────────────────────────── */
+  .map-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .map-wrap.visible { display: block; }
+  #map { height: 340px; width: 100%; }
+  #map-fallback { display: none; height: 60px; align-items: center; justify-content: center; font-size: .85rem; color: var(--muted); }
+
+  /* ── Cache badge ─────────────────────────────────────────────────────────── */
+  .cache-badge {
+    display: inline-block;
+    background: #1e3a5f;
+    color: var(--blue);
+    font-size: .7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Misc ────────────────────────────────────────────────────────────────── */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .unavailable { color: var(--muted); font-size: .85rem; padding: 12px 0; font-style: italic; }
+
+  @media (max-width: 640px) {
+    header { flex-direction: column; align-items: stretch; }
+    .logo { text-align: center; padding-top: 0; }
+    .score-banner.visible { flex-direction: column; align-items: stretch; }
+    .score-circle { margin: 0 auto; }
+    .grid { grid-template-columns: 1fr; }
+    #toast-container { left: 16px; right: 16px; max-width: none; }
+  }
+</style>
 </head>
 <body>
 
-<header>
-  <h1>Sahir's UK Postcode Checker</h1>
-  <p class="subtitle">Powered by ONS Census 2021 · Police API · OpenStreetMap · open data</p>
-  <div class="search-row">
-    <input id="postcodeInput" type="text" placeholder="e.g. B90 2DH" maxlength="8" />
-    <button id="searchBtn" onclick="runSearch()">Search</button>
-  </div>
-</header>
+<!-- Toast container -->
+<div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 
-<div id="results">
-  <div class="card" id="card-location"><h2>📍 Location</h2><div class="loading-wrap"><div class="spinner"></div></div></div>
-  <div class="card" id="card-crime"><h2>🚔 Crime</h2><div class="loading-wrap"><div class="spinner"></div></div></div>
-  <div class="card" id="card-ethnicity"><h2>👥 Ethnicity</h2><div class="loading-wrap"><div class="spinner"></div></div></div>
-  <div class="card" id="card-tenure"><h2>🏠 Housing Tenure</h2><div class="loading-wrap"><div class="spinner"></div></div></div>
-  <div class="card" id="card-schools"><h2>🏫 Schools Nearby (2 miles)</h2><div class="loading-wrap"><div class="spinner"></div></div></div>
-  <div class="card" id="card-religion"><h2>✝ Religion</h2><div class="loading-wrap"><div class="spinner"></div></div></div>
+<!-- Info panel overlay -->
+<div class="info-overlay" id="info-overlay" role="dialog" aria-modal="true" aria-label="Score explanations">
+  <div class="info-panel">
+    <div class="info-header">
+      <h2>How scores are calculated</h2>
+      <button class="btn-close" id="info-close" aria-label="Close info panel">✕</button>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">
+        <span class="info-dot" style="background:var(--blue)"></span>
+        Overall Score (0–100)
+      </div>
+      <div class="info-desc">
+        Composite desirability rating for the area. <strong>Higher is better.</strong>
+        Weighted average of all four indicators below.
+      </div>
+      <div class="info-formula">Score = (Schools×0.3) + (Crime×0.3) + (Transport×0.2) + (Flood×0.2)</div>
+      <div class="info-scale" style="margin-top:10px;">
+        <div class="info-scale-seg" style="background:#7f1d1d;color:var(--red)">0–39<br>Poor</div>
+        <div class="info-scale-seg" style="background:#7c2d12;color:var(--amber)">40–69<br>Average</div>
+        <div class="info-scale-seg" style="background:#14532d;color:var(--green)">70–100<br>Good</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">
+        <span class="info-dot" style="background:#4ade80"></span>
+        Schools Score (0–100) · weight 30%
+      </div>
+      <div class="info-desc">
+        Based on number of schools found within 3km via OpenStreetMap data.
+        Ofsted ratings aren't available via free public API — check individual schools on
+        <a href="https://www.locrating.com/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Locrating</a>.
+      </div>
+      <div class="info-scale" style="margin-top:10px;">
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">30<br>0 schools</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--muted)">50<br>1–4 schools</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">65<br>5–9 schools</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">80<br>10+ schools</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">
+        <span class="info-dot" style="background:#fb923c"></span>
+        Crime Score (0–100) · weight 30%
+      </div>
+      <div class="info-desc">
+        Based on Police UK street-crime incidents averaged over 3 months.
+        <strong>Higher score = less crime = better.</strong>
+        National average is ~65 incidents/month per area.
+      </div>
+      <div class="info-scale" style="margin-top:10px;">
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">10<br>&gt;200/mo</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">30–50<br>100–200/mo</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">70–90<br>&lt;50/mo</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">
+        <span class="info-dot" style="background:#60a5fa"></span>
+        Transport Score (0–100) · weight 20%
+      </div>
+      <div class="info-desc">
+        Distance to nearest railway station found via OpenStreetMap.
+        <strong>Higher score = closer station = better.</strong>
+      </div>
+      <div class="info-scale" style="margin-top:10px;">
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">100<br>&lt;500m</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">60–80<br>0.5–1.5km</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">20–40<br>&gt;1.5km</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-section-title">
+        <span class="info-dot" style="background:#a78bfa"></span>
+        Flood Risk Score (0–100) · weight 20%
+      </div>
+      <div class="info-desc">
+        Based on EA Flood Monitoring API — number of active flood alert areas within 2km.
+        <strong>Higher score = lower risk = better.</strong>
+        Always verify with the official
+        <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Flood Map for Planning</a>.
+      </div>
+      <div class="info-scale" style="margin-top:10px;">
+        <div class="info-scale-seg" style="background:#14532d;color:var(--green)">100<br>0 areas</div>
+        <div class="info-scale-seg" style="background:#7c2d12;color:var(--amber)">60<br>1–2 areas</div>
+        <div class="info-scale-seg" style="background:#7f1d1d;color:var(--red)">20<br>3+ areas</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<footer id="footer" style="display:none; text-align:center; padding:1.5rem; font-size:0.78rem; color:#aaa; background:#fff; border-top:1px solid #e0e6ed; margin-top:1rem;">
-  <strong>Data sources:</strong>
-  <a href="https://postcodes.io" target="_blank">Postcodes.io</a> ·
-  <a href="https://data.police.uk" target="_blank">Police API</a> ·
-  <a href="https://www.nomisweb.co.uk" target="_blank">ONS / Nomis Census 2021</a> ·
-  <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> ·
-  <a href="https://reports.ofsted.gov.uk" target="_blank">Ofsted</a>
-</footer>
+<header>
+  <div class="logo">UK Property <span>Intel</span></div>
+  <div class="search-col">
+    <span class="search-label">Search by address or place name</span>
+    <div style="position:relative;">
+      <div class="address-wrap">
+        <input type="text" id="address-input" placeholder="e.g. Shirley, Solihull or 15 Wayfield Close…" autocomplete="off" spellcheck="false" aria-label="Search by address or place name">
+        <button class="btn-addr-search" id="addr-search-btn" aria-label="Search address">Find</button>
+      </div>
+      <div class="address-dropdown" id="address-dropdown" role="listbox"></div>
+    </div>
+    <span class="search-label">Or enter postcode directly</span>
+    <div class="search-wrap">
+      <input type="text" id="postcode-input" placeholder="e.g. B90 2QS" maxlength="8" autocomplete="off" spellcheck="false" aria-label="UK postcode">
+      <button class="btn-search" id="search-btn" onclick="runSearch()">Search</button>
+    </div>
+    <div class="error-msg" id="error-msg" role="alert"></div>
+  </div>
+  <button class="btn-info" id="info-btn" aria-label="How scores are calculated" aria-expanded="false" title="How scores are calculated">?</button>
+</header>
+
+<main>
+  <div id="score-banner" class="score-banner">
+    <div class="score-circle" id="score-circle">—</div>
+    <div class="score-info">
+      <div class="score-address" id="score-address">Loading…</div>
+      <div class="score-sub" id="score-sub"></div>
+      <div class="score-hint">Scores update progressively as data loads</div>
+      <div class="score-bars">
+        <div class="bar-row">
+          <span class="bar-label"><span class="bar-dot" style="background:#4ade80"></span>Schools</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-schools" style="width:0%;background:#4ade80"></div></div>
+          <span class="bar-val" id="bv-schools">—</span>
+          <span class="bar-tip" title="Schools score (0–100): density of schools within 3km. Higher is better. Weight: 30%">ⓘ</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label"><span class="bar-dot" style="background:#fb923c"></span>Crime</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-crime" style="width:0%;background:#fb923c"></div></div>
+          <span class="bar-val" id="bv-crime">—</span>
+          <span class="bar-tip" title="Crime score (0–100): 90=very low crime (&lt;20/mo), 10=very high (&gt;200/mo). Higher is better. Weight: 30%">ⓘ</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label"><span class="bar-dot" style="background:#60a5fa"></span>Transport</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-transport" style="width:0%;background:#60a5fa"></div></div>
+          <span class="bar-val" id="bv-transport">—</span>
+          <span class="bar-tip" title="Transport score (0–100): 100=station &lt;500m, 20=station &gt;2km away. Higher is better. Weight: 20%">ⓘ</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label"><span class="bar-dot" style="background:#a78bfa"></span>Flood Risk</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-flood" style="width:0%;background:#a78bfa"></div></div>
+          <span class="bar-val" id="bv-flood">—</span>
+          <span class="bar-tip" title="Flood score (0–100): 100=no flood alert areas nearby, 20=high risk (3+ areas). Higher is better. Weight: 20%">ⓘ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title"><span>🏫</span> Schools Nearby</div>
+      <div class="skeleton active" id="skel-schools">
+        <div class="skel-line" style="height:14px;width:80%"></div>
+        <div class="skel-line" style="height:14px;width:60%"></div>
+        <div class="skel-line" style="height:14px;width:70%"></div>
+      </div>
+      <div id="schools-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🚔</span> Crime Data</div>
+      <div class="skeleton active" id="skel-crime">
+        <div class="skel-line" style="height:14px;width:40%"></div>
+        <div class="skel-line" style="height:14px;width:70%"></div>
+        <div class="skel-line" style="height:14px;width:55%"></div>
+      </div>
+      <div id="crime-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🚆</span> Transport Links</div>
+      <div class="skeleton active" id="skel-transport">
+        <div class="skel-line" style="height:14px;width:65%"></div>
+        <div class="skel-line" style="height:14px;width:50%"></div>
+        <div class="skel-line" style="height:14px;width:75%"></div>
+      </div>
+      <div id="transport-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🏠</span> House Prices</div>
+      <div class="skeleton active" id="skel-prices">
+        <div class="skel-line" style="height:14px;width:50%"></div>
+        <div class="skel-line" style="height:14px;width:80%"></div>
+        <div class="skel-line" style="height:14px;width:60%"></div>
+      </div>
+      <div id="prices-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🌊</span> Flood &amp; Environment</div>
+      <div class="skeleton active" id="skel-flood">
+        <div class="skel-line" style="height:14px;width:55%"></div>
+        <div class="skel-line" style="height:14px;width:70%"></div>
+      </div>
+      <div id="flood-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📍</span> Area Summary</div>
+      <div class="skeleton active" id="skel-area">
+        <div class="skel-line" style="height:14px;width:60%"></div>
+        <div class="skel-line" style="height:14px;width:75%"></div>
+        <div class="skel-line" style="height:14px;width:50%"></div>
+      </div>
+      <div id="area-content"></div>
+    </div>
+  </div>
+
+  <div class="map-wrap" id="map-wrap">
+    <div id="map"></div>
+    <div id="map-fallback"></div>
+  </div>
+
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">🏙️</div>
+    <div>Enter a UK postcode or address above to generate your property intelligence report.</div>
+    <div style="margin-top:8px;font-size:.8rem;">Try: B90 2QS · SW1A 1AA · "Shirley, Solihull"</div>
+  </div>
+</main>
 
 <script>
-  const GOOGLE_PLACES_KEY = "";  // Get free key at console.cloud.google.com
+(function () {
+  'use strict';
 
-  /* ── Chart instances ── */
-  let crimeChart = null, ethnicityChart = null, tenureChart = null, religionChart = null;
+  // ── State ──────────────────────────────────────────────────────────────────
+  let leafletMap = null;
+  let mapInitialised = false;
+  let mapMarkersAdded = [];
+  let addressDebounceTimer = null;
+  let _searchLat = 0, _searchLng = 0;
 
-  /* ── Helpers ── */
-  const normalisePostcode = raw => raw.replace(/\s+/g, '').toUpperCase();
-  const spinner = () => '<div class="loading-wrap"><div class="spinner"></div></div>';
+  // Progressive score tracking — updated as each section resolves
+  let _scores = { crime: null, schools: null, transport: null, flood: null };
 
-  function setCardContent(id, html) {
-    const card = document.getElementById(id);
-    const h2 = card.querySelector('h2');
-    card.innerHTML = '';
-    card.appendChild(h2.cloneNode(true));
-    card.insertAdjacentHTML('beforeend', html);
+  // ── Cache (localStorage, 1h TTL) ───────────────────────────────────────────
+  const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+  const CACHE_PREFIX = 'upki2_';
+
+  function getCached(pc) {
+    try {
+      const raw = localStorage.getItem(CACHE_PREFIX + pc);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (Date.now() - data.ts > CACHE_TTL) { localStorage.removeItem(CACHE_PREFIX + pc); return null; }
+      return data;
+    } catch { return null; }
   }
 
-  function distKm(lat1, lng1, lat2, lng2) {
+  function setCached(pc, data) {
+    try { localStorage.setItem(CACHE_PREFIX + pc, JSON.stringify({ ts: Date.now(), ...data })); } catch { /* quota */ }
+  }
+
+  // ── Fetch with timeout (5s) ────────────────────────────────────────────────
+  function fetchT(url, options = {}, timeoutMs = 5000) {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+  }
+
+  // ── Toast notifications ────────────────────────────────────────────────────
+  function showToast(msg, type = 'info', durationMs = 4500) {
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.textContent = msg;
+    el.setAttribute('role', 'status');
+    const container = document.getElementById('toast-container');
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity .3s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 350);
+    }, durationMs);
+  }
+
+  // ── Info panel ─────────────────────────────────────────────────────────────
+  const infoBtn = document.getElementById('info-btn');
+  const infoOverlay = document.getElementById('info-overlay');
+  const infoClose = document.getElementById('info-close');
+
+  function openInfoPanel() {
+    infoOverlay.classList.add('open');
+    infoBtn.setAttribute('aria-expanded', 'true');
+    infoClose.focus();
+  }
+  function closeInfoPanel() {
+    infoOverlay.classList.remove('open');
+    infoBtn.setAttribute('aria-expanded', 'false');
+    infoBtn.focus();
+  }
+
+  infoBtn.addEventListener('click', () =>
+    infoOverlay.classList.contains('open') ? closeInfoPanel() : openInfoPanel()
+  );
+  infoClose.addEventListener('click', closeInfoPanel);
+  infoOverlay.addEventListener('click', e => { if (e.target === infoOverlay) closeInfoPanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && infoOverlay.classList.contains('open')) closeInfoPanel(); });
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+  function haversine(lat1, lng1, lat2, lng2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-  const kmToMiles = km => (km * 0.621371).toFixed(2);
-
-  /* ── Horizontal bar chart with value labels ── */
-  function makeBarChart(canvasId, labels, values, color, total) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    return new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: color,
-          borderRadius: 5,
-          barThickness: 18,
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                const val = ctx.parsed.x;
-                const pct = total ? ` (${((val/total)*100).toFixed(1)}%)` : '';
-                return ` ${val.toLocaleString()}${pct}`;
-              }
-            }
-          }
-        },
-        scales: {
-          x: { beginAtZero: true, grid: { color: '#f0f2f5' },
-               ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v } },
-          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
-        },
-        layout: { padding: { right: 60 } },
-        animation: {
-          onComplete(evt) {
-            const chart = evt.chart;
-            const ctx2 = chart.ctx;
-            ctx2.font = '11px system-ui, sans-serif';
-            ctx2.fillStyle = '#555';
-            ctx2.textAlign = 'left';
-            chart.data.datasets.forEach((ds, di) => {
-              chart.getDatasetMeta(di).data.forEach((bar, i) => {
-                const val = ds.data[i];
-                const pct = total ? ` ${((val/total)*100).toFixed(1)}%` : '';
-                ctx2.fillText(val.toLocaleString() + pct, bar.x + 4, bar.y + 4);
-              });
-            });
-          }
-        }
-      }
-    });
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  /* ── Main search ── */
-  async function runSearch() {
-    const raw = document.getElementById('postcodeInput').value.trim();
-    if (!raw) return;
+  function formatPrice(n) {
+    return Number(n).toLocaleString('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
+  }
 
-    const pc = normalisePostcode(raw);
-    const btn = document.getElementById('searchBtn');
-    btn.disabled = true;
-    btn.textContent = 'Searching…';
+  function formatDate(str) {
+    if (!str) return '—';
+    const rfc = str.match(/(\d{1,2}\s[A-Za-z]{3}\s\d{4})/);
+    if (rfc) return rfc[1].replace(/^(\d)\s/, '0$1 ');
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
 
-    const cards = ['card-location','card-crime','card-ethnicity','card-tenure','card-schools','card-religion'];
-    const results = document.getElementById('results');
-    results.classList.add('visible');
-    cards.forEach(id => {
-      const card = document.getElementById(id);
-      const h2 = card.querySelector('h2');
-      card.innerHTML = '';
-      card.appendChild(h2.cloneNode(true));
-      card.insertAdjacentHTML('beforeend', spinner());
-    });
-
-    [crimeChart, ethnicityChart, tenureChart, religionChart].forEach(c => { if (c) c.destroy(); });
-    crimeChart = ethnicityChart = tenureChart = religionChart = null;
-
-    try {
-      const pcRes = await fetch(`https://api.postcodes.io/postcodes/${pc}`);
-      if (!pcRes.ok) throw new Error(`Postcode not found (${pcRes.status})`);
-      const pcData = await pcRes.json();
-      if (pcData.status !== 200) throw new Error('Invalid postcode');
-
-      const r = pcData.result;
-      const lat = r.latitude;
-      const lng = r.longitude;
-      const lsoaCode = r.codes?.lsoa || r.codes?.lsoa21 || '';  // e.g. E01010220 (~1,500 people)
-      const district = r.admin_district || '—';
-
-      renderLocation(r, lat, lng);
-
-      await Promise.allSettled([
-        renderCrime(lat, lng),
-        renderEthnicity(lsoaCode),
-        renderTenure(lsoaCode),
-        renderSchools(lat, lng, district),
-        renderReligion(lsoaCode),
-      ]);
-
-    } catch (err) {
-      cards.forEach(id => setCardContent(id, `<p class="error-msg">Error: ${err.message}</p>`));
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Search';
-      document.getElementById('footer').style.display = 'block';
+  function getMonths(n) {
+    const months = [];
+    const now = new Date();
+    for (let i = 1; i <= n; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     }
+    return months;
   }
 
-  document.getElementById('postcodeInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') runSearch();
+  function slugify(name) {
+    return (name || '').toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  function scoreColour(s) {
+    if (s >= 70) return 'green';
+    if (s >= 40) return 'amber';
+    return 'red';
+  }
+
+  function showSkeleton(id) {
+    const el = document.getElementById('skel-' + id);
+    if (el) el.classList.add('active');
+  }
+
+  function hideSkeleton(id) {
+    const el = document.getElementById('skel-' + id);
+    if (el) el.classList.remove('active');
+  }
+
+  function validatePostcode(raw) {
+    const clean = raw.replace(/\s/g, '').toUpperCase();
+    return /^[A-Z]{1,2}[0-9][0-9A-Z]?[0-9][A-BD-HJLNP-UW-Z]{2}$/.test(clean) ? clean : null;
+  }
+
+  function formatPostcode(clean) {
+    return clean.slice(0, -3) + ' ' + clean.slice(-3);
+  }
+
+  function setBar(id, score) {
+    const fill = document.getElementById('bar-' + id);
+    const val = document.getElementById('bv-' + id);
+    if (fill) fill.style.width = score + '%';
+    if (val) val.textContent = score;
+  }
+
+  // Update the composite score circle whenever any individual score changes.
+  // Uses 50 as a neutral placeholder for scores not yet loaded.
+  function updateCompositeScore() {
+    const { crime, schools, transport, flood } = _scores;
+    // Need at least one score to show something meaningful
+    const anyReady = [crime, schools, transport, flood].some(s => s !== null);
+    if (!anyReady) return;
+
+    const s = crime ?? 50;
+    const sc = schools ?? 50;
+    const tr = transport ?? 20;
+    const fl = flood ?? 50;
+
+    // Formula: Schools×0.3 + Crime×0.3 + Transport×0.2 + Flood×0.2
+    const composite = Math.round(sc * 0.3 + s * 0.3 + tr * 0.2 + fl * 0.2);
+    const col = scoreColour(composite);
+    const circle = document.getElementById('score-circle');
+    circle.textContent = composite;
+    circle.className = 'score-circle ' + col;
+  }
+
+  // ── Address autocomplete ───────────────────────────────────────────────────
+  const addressInput = document.getElementById('address-input');
+  const addressDropdown = document.getElementById('address-dropdown');
+  const addrSearchBtn = document.getElementById('addr-search-btn');
+
+  addressInput.addEventListener('input', () => {
+    clearTimeout(addressDebounceTimer);
+    const q = addressInput.value.trim();
+    if (q.length < 2) { hideAddressDropdown(); return; }
+    addressDebounceTimer = setTimeout(() => fetchAddressSuggestions(q), 350);
   });
 
-  /* ── Card 1: Location ── */
-  function renderLocation(r, lat, lng) {
-    const bboxLng0 = (lng - 0.01).toFixed(6), bboxLat0 = (lat - 0.01).toFixed(6);
-    const bboxLng1 = (lng + 0.01).toFixed(6), bboxLat1 = (lat + 0.01).toFixed(6);
-    const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bboxLng0},${bboxLat0},${bboxLng1},${bboxLat1}&layer=mapnik&marker=${lat},${lng}`;
-    setCardContent('card-location', `
-      <div class="info-grid">
-        <div class="info-item"><label>District</label><span>${r.admin_district || '—'}</span></div>
-        <div class="info-item"><label>Ward</label><span>${r.admin_ward || '—'}</span></div>
-        <div class="info-item"><label>Constituency</label><span>${r.parliamentary_constituency || '—'}</span></div>
-        <div class="info-item"><label>Region</label><span>${r.region || '—'}</span></div>
-        <div class="info-item"><label>Country</label><span>${r.country || '—'}</span></div>
-        <div class="info-item"><label>LSOA</label><span>${r.lsoa || '—'}</span></div>
-      </div>
-      <iframe class="map-frame" src="${mapUrl}" loading="lazy" title="Map"></iframe>
-    `);
-  }
-
-  /* ── Card 2: Crime ── */
-  async function renderCrime(lat, lng) {
-    try {
-      // Get latest available month from Police API
-      const latestRes = await fetch('https://data.police.uk/api/crime-last-updated');
-      const latestJson = await latestRes.json();
-      // date is "YYYY-MM-DD" — take YYYY-MM, then back one month as it's the last updated month
-      const rawDate = latestJson.date || '';
-      let crimeDate = rawDate.slice(0, 7); // "YYYY-MM"
-      // The date returned is when data was last updated; subtract one month to get latest data month
-      if (crimeDate) {
-        const [y, m] = crimeDate.split('-').map(Number);
-        const prev = new Date(y, m - 2, 1); // subtract 1 month
-        crimeDate = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+  addressInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clearTimeout(addressDebounceTimer);
+      const q = addressInput.value.trim();
+      if (!q) return;
+      // If dropdown has one result, auto-pick it; otherwise trigger search
+      const firstOption = addressDropdown.querySelector('.address-option');
+      if (firstOption) {
+        firstOption.click();
+      } else {
+        // No suggestions shown yet — kick off a fresh fetch then auto-pick
+        fetchAddressSuggestions(q, true);
       }
-
-      const url = `https://data.police.uk/api/crimes-street/all-crime?lat=${lat}&lng=${lng}&date=${crimeDate}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Police API ${res.status}`);
-      const crimes = await res.json();
-
-      const counts = {};
-      crimes.forEach(c => { counts[c.category] = (counts[c.category] || 0) + 1; });
-      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-      const top8 = sorted.slice(0, 8);
-      const total = crimes.length;
-      const prettyLabel = cat => cat.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-      // Format date for display: "2024-09" → "Sep 2024"
-      const [dy, dm] = crimeDate.split('-');
-      const displayDate = new Date(Number(dy), Number(dm) - 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-
-      setCardContent('card-crime', `
-        <div class="stat-summary">
-          <span class="stat-total" style="color:#e76f51">${total.toLocaleString()}</span>
-          <span class="stat-label">crimes reported</span>
-        </div>
-        <p class="stat-sub">${displayDate} · England LSOA avg: ~80/month</p>
-        <canvas id="crimeCanvas" height="260"></canvas>
-      `);
-
-      crimeChart = makeBarChart(
-        'crimeCanvas',
-        top8.map(([k]) => prettyLabel(k)),
-        top8.map(([, v]) => v),
-        top8.map((_, i) => `hsl(${18 + i * 10}, 85%, ${52 + i * 3}%)`),
-        total
-      );
-    } catch (err) {
-      setCardContent('card-crime', `<p class="error-msg">Crime data unavailable: ${err.message}</p>`);
     }
+    if (e.key === 'Escape') hideAddressDropdown();
+    if (e.key === 'ArrowDown') {
+      const first = addressDropdown.querySelector('.address-option');
+      if (first) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  addrSearchBtn.addEventListener('click', () => {
+    clearTimeout(addressDebounceTimer);
+    const q = addressInput.value.trim();
+    if (q) fetchAddressSuggestions(q, true);
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-col')) hideAddressDropdown();
+  });
+
+  function hideAddressDropdown() {
+    addressDropdown.classList.remove('open');
+    addressDropdown.innerHTML = '';
   }
 
-  /* ── Card 3: Ethnicity — Nomis Census 2021 TS021 ── */
-  async function renderEthnicity(lsoaCode) {
+  // autoSelect=true: immediately click the first result after fetch
+  async function fetchAddressSuggestions(q, autoSelect = false) {
+    addrSearchBtn.disabled = true;
+
+    // Show searching indicator
+    addressDropdown.innerHTML = '<div class="addr-searching">Searching…</div>';
+    addressDropdown.classList.add('open');
+
     try {
-      if (!lsoaCode) throw new Error('No LSOA code available');
-      const codes = Array.from({length:19}, (_,i) => i + 1).join(',');
-      const url = `https://www.nomisweb.co.uk/api/v01/dataset/NM_2041_1.data.json?geography=${lsoaCode}&C2021_ETH_20=${codes}&measures=20100&select=C2021_ETH_20_name,obs_value`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error(`Nomis API ${res.status}`);
-      const data = await res.json();
-      const obs = data.obs || [];
-      if (!obs.length) throw new Error('No data returned');
+      // Run postcodes.io (postcode prefix + places) and Nominatim in parallel
+      const [pcRes, placeRes, nominatimRes] = await Promise.allSettled([
+        fetchT(`https://api.postcodes.io/postcodes?q=${encodeURIComponent(q)}&limit=4`, {}, 4000)
+          .then(r => r.ok ? r.json() : null).catch(() => null),
+        fetchT(`https://api.postcodes.io/places?q=${encodeURIComponent(q)}&limit=4`, {}, 4000)
+          .then(r => r.ok ? r.json() : null).catch(() => null),
+        fetchT(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=gb&limit=4&addressdetails=1`, {
+          headers: { 'Accept-Language': 'en-GB', 'User-Agent': 'UKPropertyIntel/1.0' }
+        }, 4000).then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
 
-      const sorted = obs.sort((a,b) => (b.obs_value?.value||0) - (a.obs_value?.value||0)).slice(0, 10);
-      const labels = sorted.map(o => o.c2021_eth_20?.description || '?');
-      const values = sorted.map(o => o.obs_value?.value || 0);
-      const total = values.reduce((s, v) => s + v, 0);
+      const pcResults = pcRes.value?.result || [];
+      const placeResults = placeRes.value?.result || [];
+      const nominatimResults = nominatimRes.value || [];
 
-      // Shorten labels
-      const shorten = l => l.replace(/^(Asian, Asian British or Asian Welsh): /, '')
-                            .replace(/^(White): /, 'White: ')
-                            .replace(/^(Black, Black British, Black Welsh, Caribbean or African): /, 'Black: ')
-                            .replace(/^(Mixed or Multiple ethnic groups): /, 'Mixed: ');
+      // Build postcode-match rows
+      const pcRows = pcResults.map(r => {
+        const pc = r.postcode || '';
+        const district = r.admin_district || r.admin_county || '';
+        return `<div class="address-option" data-postcode="${escAttr(pc)}" data-type="pc" tabindex="0" role="option">
+          <span class="address-option-dist">${escHtml(district)}</span>
+          <span class="address-option-pc">${escHtml(pc)}</span>
+        </div>`;
+      });
 
-      setCardContent('card-ethnicity', `
-        <p class="stat-sub" style="margin-bottom:0.8rem">Census 2021 · ${total.toLocaleString()} residents in this LSOA area</p>
-        <canvas id="ethnicityCanvas" height="300"></canvas>
-      `);
+      // Place-name rows from postcodes.io places API
+      const placeRows = placeResults.map(p => {
+        const name = [p.name_1, p.name_2, p.county_unitary].filter(Boolean).join(', ');
+        return `<div class="address-option" data-lat="${p.latitude}" data-lng="${p.longitude}" data-type="place" tabindex="0" role="option">
+          <span class="address-option-dist">📍 ${escHtml(name)}</span>
+          <span class="address-option-pc" style="color:var(--muted);font-size:.75rem;">Place</span>
+        </div>`;
+      });
 
-      ethnicityChart = makeBarChart(
-        'ethnicityCanvas',
-        labels.map(shorten),
-        values,
-        labels.map((_, i) => `hsl(${185 + i * 8}, ${70 - i * 3}%, ${42 + i * 4}%)`),
-        total
-      );
-    } catch (err) {
-      setCardContent('card-ethnicity', `
-        <p class="error-msg">Data unavailable — <a href="https://www.nomisweb.co.uk" target="_blank">view at nomisweb.co.uk</a><br><small>${err.message}</small></p>`);
-    }
-  }
+      // Nominatim results (deduplicate with above if possible)
+      const nominatimRows = nominatimResults
+        .filter(n => {
+          // Skip if postcode already covered by postcodes.io
+          const npc = n.address?.postcode?.replace(/\s/g, '').toUpperCase() || '';
+          return !pcResults.some(r => r.postcode?.replace(/\s/g, '').toUpperCase() === npc);
+        })
+        .map(n => {
+          const displayName = n.display_name?.split(',').slice(0, 3).join(', ') || '';
+          const postcode = n.address?.postcode || '';
+          return `<div class="address-option" data-lat="${n.lat}" data-lng="${n.lon}" data-nom-pc="${escAttr(postcode)}" data-type="nominatim" tabindex="0" role="option">
+            <span class="address-option-dist">🔍 ${escHtml(displayName)}</span>
+            <span class="address-option-pc" style="color:var(--muted);font-size:.75rem;">${escHtml(postcode) || 'Address'}</span>
+          </div>`;
+        });
 
-  /* ── Card 4: Housing Tenure — Nomis Census 2021 TS054 ── */
-  async function renderTenure(lsoaCode) {
-    try {
-      if (!lsoaCode) throw new Error('No LSOA code available');
-      const url = `https://www.nomisweb.co.uk/api/v01/dataset/NM_2072_1.data.json?geography=${lsoaCode}&C2021_TENURE_9=1,2,3,4,5,6,7,8&measures=20100&select=C2021_TENURE_9_name,obs_value`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error(`Nomis API ${res.status}`);
-      const data = await res.json();
-      const obs = data.obs || [];
-      if (!obs.length) throw new Error('No data returned');
-
-      const groupMap = {
-        'Owned: Owns outright': 'Owned outright',
-        'Owned: Owns with a mortgage or loan': 'Owned (mortgage)',
-        'Shared ownership: Shared ownership': 'Shared ownership',
-        'Social rented: Rents from council or Local Authority': 'Social (council)',
-        'Social rented: Other social rented': 'Social (other)',
-        'Private rented: Private landlord or letting agency': 'Private rented',
-        'Private rented: Other private rented': 'Private rented (other)',
-        'Lives rent free': 'Lives rent free',
-      };
-
-      const sorted = obs.sort((a,b) => (b.obs_value?.value||0) - (a.obs_value?.value||0));
-      const labels = sorted.map(o => groupMap[o.c2021_tenure_9?.description] || o.c2021_tenure_9?.description || '?');
-      const values = sorted.map(o => o.obs_value?.value || 0);
-      const total = values.reduce((s, v) => s + v, 0);
-
-      setCardContent('card-tenure', `
-        <p class="stat-sub" style="margin-bottom:0.8rem">Census 2021 · ${total.toLocaleString()} households in this LSOA area</p>
-        <canvas id="tenureCanvas" height="240"></canvas>
-      `);
-
-      tenureChart = makeBarChart(
-        'tenureCanvas',
-        labels,
-        values,
-        labels.map((_, i) => `hsl(${270 + i * 10}, ${65 - i * 4}%, ${48 + i * 5}%)`),
-        total
-      );
-    } catch (err) {
-      setCardContent('card-tenure', `
-        <p class="error-msg">
-          Data unavailable — <a href="https://www.nomisweb.co.uk" target="_blank">view at nomisweb.co.uk</a>
-          <br><small>${err.message}</small>
-        </p>`);
-    }
-  }
-
-  /* ── Card 5: Schools — OpenStreetMap Overpass (GET) ── */
-  async function renderSchools(lat, lng, district) {
-    try {
-      const radiusM = 3219; // ~2 miles
-      // Use GET request — avoids POST CORS preflight issues in some browsers
-      const query = `[out:json][timeout:25];(node[amenity=school](around:${radiusM},${lat},${lng});way[amenity=school](around:${radiusM},${lat},${lng}););out center tags;`;
-      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
-      if (!res.ok) throw new Error(`Overpass API ${res.status}`);
-      const data = await res.json();
-
-      let schools = (data.elements || []).map(el => {
-        const sLat = el.lat ?? el.center?.lat ?? 0;
-        const sLng = el.lon ?? el.center?.lon ?? 0;
-        return { tags: el.tags || {}, _distKm: distKm(lat, lng, sLat, sLng) };
-      }).filter(s => s.tags.name)
-        .sort((a, b) => a._distKm - b._distKm)
-        .slice(0, 15);
-
-      if (!schools.length) {
-        setCardContent('card-schools', '<p class="error-msg">No schools found within 2 miles.</p>');
+      const allRows = [...pcRows, ...placeRows, ...nominatimRows];
+      if (allRows.length === 0) {
+        addressDropdown.innerHTML = '<div class="addr-searching" style="color:var(--muted)">No results found. Try a postcode directly.</div>';
+        addressDropdown.classList.add('open');
+        addrSearchBtn.disabled = false;
         return;
       }
 
-      const phaseLabel = tags => {
-        const lvl = tags['isced:level'] || '';
-        if (/\b[01]\b/.test(lvl)) return 'Primary';
-        if (/\b[23]\b/.test(lvl)) return 'Secondary';
-        const t = (tags['school:type'] || tags.operator_type || '').toLowerCase();
-        if (/primary|infant|junior|prep/.test(t)) return 'Primary';
-        if (/secondary|high|upper/.test(t)) return 'Secondary';
-        return 'School';
-      };
+      addressDropdown.innerHTML = allRows.join('');
+      addressDropdown.classList.add('open');
+      attachDropdownHandlers();
 
-      const googleKeyNote = GOOGLE_PLACES_KEY ? '' : '<span class="google-key-note">Add Google API key</span>';
-
-      const rows = schools.map(s => {
-        const name = s.tags.name;
-        const urn = s.tags['ref:edubase'] || s.tags['ref:GB:edubase'] || '';
-        // Direct Ofsted report URL when URN available, else Ofsted search
-        const ofstedUrl = urn
-          ? `https://reports.ofsted.gov.uk/provider/21/${urn}`
-          : `https://reports.ofsted.gov.uk/search?q=${encodeURIComponent(name)}`;
-        const phase = phaseLabel(s.tags);
-        const dist = kmToMiles(s._distKm);
-        return `<tr>
-          <td><a href="${ofstedUrl}" target="_blank" style="color:#3a7bd5;text-decoration:none">${name}</a></td>
-          <td>${phase}</td>
-          <td>${dist} mi</td>
-          <td>${GOOGLE_PLACES_KEY ? '—' : googleKeyNote}</td>
-        </tr>`;
-      }).join('');
-
-      setCardContent('card-schools', `
-        <div class="schools-table-wrap">
-          <table>
-            <thead><tr><th>School</th><th>Phase</th><th>Distance</th><th>Google ★</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-        <p class="schools-note">School names link directly to Ofsted reports. Catchment boundaries vary — contact ${district} Council to confirm exact catchment for your address.</p>
-      `);
-    } catch (err) {
-      setCardContent('card-schools', `
-        <p class="error-msg">
-          Schools data unavailable: ${err.message}<br>
-          <a href="https://reports.ofsted.gov.uk/search" target="_blank">Search Ofsted directly →</a>
-        </p>`);
+      if (autoSelect) {
+        const first = addressDropdown.querySelector('.address-option');
+        if (first) first.click();
+      }
+    } catch {
+      hideAddressDropdown();
     }
+
+    addrSearchBtn.disabled = false;
   }
 
-  /* ── Card 6: Religion — Nomis Census 2021 TS030 ── */
-  async function renderReligion(lsoaCode) {
+  function attachDropdownHandlers() {
+    addressDropdown.querySelectorAll('.address-option').forEach(el => {
+      el.addEventListener('click', () => handleOptionClick(el));
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOptionClick(el); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); (el.nextElementSibling || el).focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); (el.previousElementSibling || addressInput).focus(); }
+      });
+    });
+  }
+
+  async function handleOptionClick(el) {
+    hideAddressDropdown();
+    const type = el.getAttribute('data-type');
+
+    if (type === 'pc') {
+      document.getElementById('postcode-input').value = el.getAttribute('data-postcode');
+      addressInput.value = '';
+      runSearch();
+      return;
+    }
+
+    if (type === 'nominatim') {
+      // If Nominatim gave us the postcode directly, use it
+      const nomPc = el.getAttribute('data-nom-pc');
+      if (nomPc && validatePostcode(nomPc)) {
+        document.getElementById('postcode-input').value = nomPc;
+        addressInput.value = '';
+        runSearch();
+        return;
+      }
+      // Otherwise reverse-geocode via postcodes.io
+      const lat = el.getAttribute('data-lat');
+      const lng = el.getAttribute('data-lng');
+      await resolveLatLngToPostcode(lat, lng);
+      return;
+    }
+
+    // type === 'place' — reverse-geocode lat/lng via postcodes.io
+    const lat = el.getAttribute('data-lat');
+    const lng = el.getAttribute('data-lng');
+    await resolveLatLngToPostcode(lat, lng);
+  }
+
+  async function resolveLatLngToPostcode(lat, lng) {
     try {
-      if (!lsoaCode) throw new Error('No LSOA code available');
-      // NM_2049_1 = TS030 Religion; C2021_RELIGION_10 value 0 = total, 1-9 = categories
-      const url = `https://www.nomisweb.co.uk/api/v01/dataset/NM_2049_1.data.json?geography=${lsoaCode}&C2021_RELIGION_10=1,2,3,4,5,6,7,8,9&measures=20100&select=C2021_RELIGION_10_name,obs_value`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error(`Nomis API ${res.status}`);
-      const data = await res.json();
-      const obs = data.obs || [];
-      if (!obs.length) throw new Error('No data returned');
-
-      const sorted = obs.sort((a,b) => (b.obs_value?.value||0) - (a.obs_value?.value||0));
-      const labels = sorted.map(o => o.c2021_religion_10?.description || '?');
-      const values = sorted.map(o => o.obs_value?.value || 0);
-      const total = values.reduce((s, v) => s + v, 0);
-
-      const religionColors = {
-        'Christian':        'hsl(210, 65%, 48%)',
-        'No religion':      'hsl(200, 15%, 60%)',
-        'Muslim':           'hsl(152, 50%, 42%)',
-        'Hindu':            'hsl(30, 80%, 55%)',
-        'Sikh':             'hsl(44, 90%, 50%)',
-        'Jewish':           'hsl(50, 70%, 45%)',
-        'Buddhist':         'hsl(170, 55%, 42%)',
-        'Any other religion': 'hsl(280, 45%, 55%)',
-        'Not answered':     'hsl(0, 0%, 75%)',
-      };
-
-      setCardContent('card-religion', `
-        <p class="stat-sub" style="margin-bottom:0.8rem">Census 2021 · ${total.toLocaleString()} residents in this LSOA area</p>
-        <canvas id="religionCanvas" height="260"></canvas>
-      `);
-
-      religionChart = makeBarChart(
-        'religionCanvas',
-        labels,
-        values,
-        labels.map(l => religionColors[l] || 'hsl(240, 40%, 60%)'),
-        total
-      );
-    } catch (err) {
-      setCardContent('card-religion', `
-        <p class="error-msg">
-          Data unavailable — <a href="https://www.nomisweb.co.uk" target="_blank">view at nomisweb.co.uk</a>
-          <br><small>${err.message}</small>
-        </p>`);
+      const r = await fetchT(`https://api.postcodes.io/postcodes?lon=${lng}&lat=${lat}&limit=1`, {}, 4000);
+      const j = await r.json();
+      const pc = j?.result?.[0]?.postcode;
+      if (pc) {
+        document.getElementById('postcode-input').value = pc;
+        addressInput.value = '';
+        runSearch();
+      } else {
+        showToast('Could not resolve address to a postcode. Try entering one directly.', 'warn');
+      }
+    } catch {
+      showToast('Address lookup failed. Please try entering a postcode directly.', 'error');
     }
   }
+
+  // Simple HTML escape helpers for dynamic content
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escAttr(str) {
+    return String(str || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // ── Main search ────────────────────────────────────────────────────────────
+
+  // Test scenarios:
+  //   B90 2QS        — valid Shirley/Solihull postcode
+  //   "Shirley, Solihull" — address search via geocoding
+  //   INVALID        — should show error message
+  //   Slow API       — each section degrades independently with 5s timeout
+
+  async function runSearch() {
+    const raw = document.getElementById('postcode-input').value.trim();
+    const errorEl = document.getElementById('error-msg');
+    const inputEl = document.getElementById('postcode-input');
+    errorEl.style.display = 'none';
+    inputEl.classList.remove('error');
+
+    const pc = validatePostcode(raw);
+    if (!pc) {
+      errorEl.textContent = 'Please enter a valid UK postcode (e.g. B90 2QS).';
+      errorEl.style.display = 'block';
+      inputEl.classList.add('error');
+      return;
+    }
+
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('search-btn').disabled = true;
+    ['schools', 'crime', 'transport', 'prices', 'flood', 'area'].forEach(showSkeleton);
+    ['schools-content', 'crime-content', 'transport-content', 'prices-content', 'flood-content', 'area-content'].forEach(id => {
+      document.getElementById(id).innerHTML = '';
+    });
+    const scoreBanner = document.getElementById('score-banner');
+    scoreBanner.classList.remove('visible');
+    document.getElementById('map-wrap').classList.remove('visible');
+
+    // Reset progressive scores
+    _scores = { crime: null, schools: null, transport: null, flood: null };
+
+    // ── Check cache ──
+    const cached = getCached(pc);
+    if (cached) {
+      restoreFromCache(cached);
+      document.getElementById('search-btn').disabled = false;
+      return;
+    }
+
+    // ── Resolve postcode via postcodes.io ──
+    let postcodeData;
+    try {
+      const res = await fetchT(`https://api.postcodes.io/postcodes/${pc}`, {}, 5000);
+      const json = await res.json();
+      if (json.status !== 200) throw new Error('invalid');
+      postcodeData = json.result;
+    } catch {
+      errorEl.textContent = 'Postcode not found. Please check and try again.';
+      errorEl.style.display = 'block';
+      inputEl.classList.add('error');
+      document.getElementById('search-btn').disabled = false;
+      document.getElementById('empty-state').style.display = 'block';
+      ['schools', 'crime', 'transport', 'prices', 'flood', 'area'].forEach(hideSkeleton);
+      return;
+    }
+
+    const {
+      latitude: lat,
+      longitude: lng,
+      admin_district,
+      admin_ward,
+      parish,
+      parliamentary_constituency,
+      region,
+      country,
+      codes
+    } = postcodeData;
+
+    _searchLat = lat;
+    _searchLng = lng;
+
+    const pcFormatted = formatPostcode(pc);
+    const isTGA = pc.startsWith('B90') || pc.startsWith('B91');
+    const wardDisplay = admin_ward || parish || 'Not available';
+
+    // Show score banner immediately with placeholder values
+    scoreBanner.classList.add('visible');
+    document.getElementById('score-address').textContent = pcFormatted;
+    document.getElementById('score-sub').textContent = `${admin_district || ''} · ${wardDisplay}`;
+
+    // ── Fire all data fetches in parallel, update UI progressively ──
+    const months = getMonths(3);
+
+    // Crime — three parallel month fetches, then process immediately
+    const crimePromise = Promise.all(
+      months.map(m =>
+        fetchT(`https://data.police.uk/api/crimes-street/all-crime?lat=${lat}&lng=${lng}&date=${m}`, {}, 8000)
+          .then(r => r.ok ? r.json() : []).catch(() => [])
+      )
+    ).then(monthArrays => {
+      const allCrimes = monthArrays.flat();
+      const seen = new Set();
+      const unique = allCrimes.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
+      const totalCrime = unique.length;
+      const crimeAvgPerMonth = Math.round(totalCrime / 3);
+      let crimeScore = 50;
+      if (crimeAvgPerMonth <= 20) crimeScore = 90;
+      else if (crimeAvgPerMonth <= 50) crimeScore = 70;
+      else if (crimeAvgPerMonth <= 100) crimeScore = 50;
+      else if (crimeAvgPerMonth <= 200) crimeScore = 30;
+      else crimeScore = 10;
+
+      const catMap = {};
+      unique.forEach(c => { const cat = c.category || 'other'; catMap[cat] = (catMap[cat] || 0) + 1; });
+      const topCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+      document.getElementById('crime-content').innerHTML = `
+        <div class="crime-total">${totalCrime}</div>
+        <div class="crime-label">incidents over 3 months (~${crimeAvgPerMonth}/month avg)</div>
+        ${topCats.map(([cat, cnt]) => `
+          <div class="crime-cat">
+            <span>${cat.replace(/-/g, ' ')}</span>
+            <span class="crime-count">${cnt}</span>
+          </div>`).join('')}
+        <div class="crime-note">Source: Police UK Street Crime API. National avg ~65 incidents/month per area.</div>`;
+
+      _scores.crime = crimeScore;
+      setBar('crime', crimeScore);
+      updateCompositeScore();
+      return { crimeScore };
+    }).catch(() => {
+      document.getElementById('crime-content').innerHTML = '<div class="unavailable">Crime data unavailable.</div>';
+      showToast('Crime data could not be loaded.', 'warn');
+      _scores.crime = 50;
+      setBar('crime', 50);
+      updateCompositeScore();
+      return { crimeScore: 50 };
+    }).finally(() => hideSkeleton('crime'));
+
+    // Schools — OSM Overpass
+    const schoolMarkers = [];
+    const schoolsPromise = fetchT('https://overpass.kumi.systems/api/interpreter', {
+      method: 'POST',
+      body: `[out:json][timeout:15];(way["amenity"="school"](around:3000,${lat},${lng});node["amenity"="school"](around:3000,${lat},${lng}););out body center tags;`
+    }, 18000).then(r => r.ok ? r.json() : null).catch(() => null).then(osmData => {
+      const elements = osmData?.elements || [];
+      let schoolScore = 30;
+
+      if (elements.length === 0) {
+        document.getElementById('schools-content').innerHTML = '<div class="unavailable">No schools found within 3km.</div>';
+      } else {
+        const withDist = elements.map(el => {
+          const slat = el.lat ?? el.center?.lat;
+          const slng = el.lon ?? el.center?.lon;
+          const dist = (slat && slng) ? haversine(lat, lng, slat, slng) : null;
+          return { ...el, _lat: slat, _lng: slng, dist };
+        }).sort((a, b) => (a.dist ?? 99) - (b.dist ?? 99)).slice(0, 8);
+
+        // Score proxy: count of schools found (Ofsted not available via free public API)
+        const count = withDist.length;
+        if (count >= 10) schoolScore = 80;
+        else if (count >= 5) schoolScore = 65;
+        else if (count >= 1) schoolScore = 50;
+
+        withDist.forEach(s => {
+          if (s._lat && s._lng) schoolMarkers.push({ lat: s._lat, lng: s._lng, name: s.tags?.name || 'School' });
+        });
+
+        const typeLabels = { community:'Community', academy:'Academy', free:'Free School', independent:'Independent', private:'Independent', grammar:'Grammar' };
+        const html = withDist.map(s => {
+          const tags = s.tags || {};
+          const name = tags.name || 'Unnamed School';
+          const rawType = tags['school:type'] || tags['operator:type'] || '';
+          const typeName = typeLabels[rawType.toLowerCase()] || (rawType ? rawType.charAt(0).toUpperCase() + rawType.slice(1) : 'School');
+          const postcode = tags['addr:postcode'] || '';
+          const distStr = s.dist != null ? `~${s.dist.toFixed(1)}km` : '—';
+          const tgaFlag = isTGA && name.toLowerCase().includes('tudor grange')
+            ? `<span class="pill pill-tga">Likely TGA Catchment</span>` : '';
+          return `<div class="school-item">
+            <div class="school-name">${escHtml(name)} ${tgaFlag}</div>
+            <div class="school-meta">${escHtml(typeName)} · ${distStr}${postcode ? ' · ' + escHtml(postcode) : ''}</div>
+            <div class="school-actions">
+              <span class="pill pill-unknown">Check Ofsted on Locrating</span>
+              <a class="btn-locrating" href="https://www.locrating.com/" target="_blank" rel="noopener noreferrer">View on Locrating ↗</a>
+            </div>
+          </div>`;
+        }).join('');
+
+        document.getElementById('schools-content').innerHTML = html +
+          `<div style="font-size:.75rem;color:var(--muted);margin-top:10px;">⚠ Ofsted ratings not available via public API — check individual schools on Locrating or the <a href="https://www.gov.uk/ofsted-inspection-reports" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Ofsted website</a>.</div>` +
+          (isTGA ? `<a class="verify-link" href="https://www.solihull.gov.uk/schools-and-learning/school-admissions" target="_blank" rel="noopener noreferrer">✓ Verify catchment with Solihull Council ↗</a>` : '');
+      }
+
+      _scores.schools = schoolScore;
+      setBar('schools', schoolScore);
+      updateCompositeScore();
+      // Add school markers to map as soon as they're ready
+      addSchoolMarkersToMap(schoolMarkers);
+      return { schoolScore, schoolMarkers };
+    }).catch(() => {
+      document.getElementById('schools-content').innerHTML = '<div class="unavailable">Schools data unavailable.</div>';
+      showToast('Schools data could not be loaded.', 'warn');
+      _scores.schools = 30;
+      setBar('schools', 30);
+      updateCompositeScore();
+      return { schoolScore: 30, schoolMarkers: [] };
+    }).finally(() => hideSkeleton('schools'));
+
+    // Transport — OSM Overpass railway stations
+    const stationList = [];
+    const transportPromise = fetchT('https://overpass.kumi.systems/api/interpreter', {
+      method: 'POST',
+      body: `[out:json][timeout:10];node["railway"="station"](around:2000,${lat},${lng});out body;`
+    }, 13000).then(r => r.ok ? r.json() : null).catch(() => null).then(stData => {
+      let transportScore = 20;
+
+      if (stData?.elements?.length > 0) {
+        const sorted = stData.elements.map(el => ({
+          name: el.tags?.name || el.tags?.['name:en'] || 'Station',
+          lat: el.lat, lng: el.lon,
+          dist: haversine(lat, lng, el.lat, el.lon)
+        })).sort((a, b) => a.dist - b.dist).slice(0, 3);
+        stationList.push(...sorted);
+
+        const nearest = stationList[0]?.dist ?? Infinity;
+        if (nearest < 0.5) transportScore = 100;
+        else if (nearest < 1) transportScore = 80;
+        else if (nearest < 1.5) transportScore = 60;
+        else if (nearest < 2) transportScore = 40;
+        else transportScore = 20;
+
+        document.getElementById('transport-content').innerHTML = stationList.map(s => {
+          const walkMin = Math.round(s.dist / 0.08);
+          return `<div class="station-item">
+            <span class="station-name">🚉 ${escHtml(s.name)}</span>
+            <div class="station-meta">
+              <div class="station-dist">${s.dist.toFixed(2)} km</div>
+              <div class="station-walk">~${walkMin} min walk</div>
+            </div>
+          </div>`;
+        }).join('');
+      } else {
+        document.getElementById('transport-content').innerHTML = '<div class="unavailable">No rail stations found within 2km.</div>';
+      }
+
+      _scores.transport = transportScore;
+      setBar('transport', transportScore);
+      updateCompositeScore();
+      addStationMarkersToMap(stationList);
+      return { transportScore, stationList };
+    }).catch(() => {
+      document.getElementById('transport-content').innerHTML = '<div class="unavailable">Transport data unavailable.</div>';
+      showToast('Transport data could not be loaded.', 'warn');
+      _scores.transport = 20;
+      setBar('transport', 20);
+      updateCompositeScore();
+      return { transportScore: 20, stationList: [] };
+    }).finally(() => hideSkeleton('transport'));
+
+    // Flood — EA Flood Monitoring
+    const floodPromise = fetchT(
+      `https://environment.data.gov.uk/flood-monitoring/id/floodAreas?lat=${lat}&long=${lng}&dist=2`,
+      {}, 5000
+    ).then(r => r.ok ? r.json() : null).catch(() => null).then(fd => {
+      let floodScore = 50;
+
+      if (!fd) {
+        document.getElementById('flood-content').innerHTML = `
+          <div class="flood-status flood-warning">⚠ Flood risk data unavailable</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:8px;">
+            Check manually: <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Flood Map for Planning ↗</a>
+          </div>`;
+        showToast('Flood data unavailable — check planning portal manually.', 'warn');
+      } else {
+        const areas = fd.items || [];
+        const count = areas.length;
+        let statusClass, statusLabel;
+        if (count === 0) {
+          floodScore = 100; statusClass = 'flood-safe'; statusLabel = '✓ No flood alert areas within 2km';
+        } else if (count <= 2) {
+          floodScore = 60; statusClass = 'flood-warning'; statusLabel = `⚠ ${count} flood alert area${count > 1 ? 's' : ''} within 2km`;
+        } else {
+          floodScore = 20; statusClass = 'flood-high'; statusLabel = `⚠ ${count} flood alert areas within 2km`;
+        }
+
+        const areasHtml = areas.slice(0, 5).map(a =>
+          `<div class="flood-area-item">📍 ${escHtml(a.description || a.label || a.notation || 'Alert Area')}</div>`
+        ).join('') || '<div class="flood-area-item">No named alert areas recorded.</div>';
+
+        document.getElementById('flood-content').innerHTML = `
+          <div class="flood-status ${statusClass}">${statusLabel}</div>
+          ${areasHtml}
+          <div style="font-size:.78rem;color:var(--muted);margin-top:8px;">
+            Source: EA Flood Monitoring API ·
+            <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Full flood map ↗</a>
+          </div>`;
+      }
+
+      _scores.flood = floodScore;
+      setBar('flood', floodScore);
+      updateCompositeScore();
+      return { floodScore };
+    }).catch(() => {
+      document.getElementById('flood-content').innerHTML = '<div class="unavailable">Flood data unavailable.</div>';
+      _scores.flood = 50;
+      setBar('flood', 50);
+      updateCompositeScore();
+      return { floodScore: 50 };
+    }).finally(() => hideSkeleton('flood'));
+
+    // Prices — Land Registry
+    const pricesPromise = fetchT(
+      `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?_page=0&_pageSize=10&propertyAddress.postcode=${encodeURIComponent(pcFormatted)}&_sort=-transactionDate`,
+      {}, 6000
+    ).then(r => r.ok ? r.json() : null).catch(() => null).then(pricesData => {
+      const items = pricesData?.result?.items;
+      if (!items || items.length === 0) {
+        document.getElementById('prices-content').innerHTML = '<div class="unavailable">No recent sales found for this postcode. Try a nearby postcode.</div>';
+        return;
+      }
+      const topItems = items.slice(0, 5);
+      const prices = topItems.map(t => Number(t.pricePaid));
+      const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+      const trend = prices[0] > prices[prices.length - 1] ? '↑ Prices rising' :
+        prices[0] < prices[prices.length - 1] ? '↓ Prices falling' : '→ Prices stable';
+
+      const uriTypeMap = {
+        'detached':'Detached', 'semi-detached':'Semi-detached', 'terraced':'Terraced',
+        'flat-maisonette':'Flat / Maisonette', 'otherpropertytype':'Other'
+      };
+      function extractPropertyType(t) {
+        const uri = t?.propertyType?._about || '';
+        if (uri) { const seg = uri.split('/').pop().toLowerCase(); return uriTypeMap[seg] || 'Other'; }
+        const labels = t?.propertyType?.label;
+        if (Array.isArray(labels) && labels[0]?._value) return labels[0]._value;
+        return 'Other';
+      }
+
+      const typesFound = [...new Set(topItems.map(t => extractPropertyType(t)).filter(v => v !== 'Other'))];
+      const mixLabel = typesFound.length > 0 ? ` · Mix: ${typesFound.join(', ')}` : '';
+
+      document.getElementById('prices-content').innerHTML = `
+        <div class="price-avg">${formatPrice(avg)}</div>
+        <div class="price-label">Average of last ${topItems.length} sales${escHtml(mixLabel)} · ${trend}</div>
+        <table>
+          <thead><tr><th>Date</th><th>Price</th><th>Type</th></tr></thead>
+          <tbody>${topItems.map(t => `<tr>
+            <td>${formatDate(t.transactionDate)}</td>
+            <td class="price-cell">${formatPrice(t.pricePaid)}</td>
+            <td>${escHtml(extractPropertyType(t))}</td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+    }).catch(() => {
+      document.getElementById('prices-content').innerHTML = '<div class="unavailable">Price data unavailable.</div>';
+    }).finally(() => hideSkeleton('prices'));
+
+    // Area summary — already have all data from postcodes.io, render immediately
+    try {
+      const lsoa = codes?.lsoa11 || codes?.lsoa21 || '—';
+      const rows = [
+        ['District', admin_district || '—'],
+        ['Ward', admin_ward || '—'],
+        ['Parish', parish || '—'],
+        ['Region', region || '—'],
+        ['Country', country || '—'],
+        ['Constituency', parliamentary_constituency || '—'],
+        ['LSOA Code', lsoa],
+        ['Postcode Sector', pcFormatted.replace(/[A-Z]{2}$/, '') || '—']
+      ];
+      document.getElementById('area-content').innerHTML = rows.map(([k, v]) =>
+        `<div class="area-row"><span class="area-key">${escHtml(k)}</span><span class="area-val">${escHtml(v)}</span></div>`
+      ).join('');
+      hideSkeleton('area');
+    } catch {
+      document.getElementById('area-content').innerHTML = '<div class="unavailable">Area data unavailable.</div>';
+      hideSkeleton('area');
+    }
+
+    // ── Initialise map immediately with postcode pin ──
+    initOrUpdateMap(lat, lng, pcFormatted, admin_district);
+
+    // ── Wait for all data to complete, then cache ──
+    await Promise.allSettled([crimePromise, schoolsPromise, transportPromise, floodPromise, pricesPromise]);
+
+    // Final composite score is already live via updateCompositeScore() calls above.
+    // Cache the computed scores and rendered HTML for 1 hour.
+    try {
+      setCached(pc, {
+        lat, lng, pcFormatted, admin_district, wardDisplay,
+        scores: { ..._scores },
+        html: {
+          crime: document.getElementById('crime-content').innerHTML,
+          schools: document.getElementById('schools-content').innerHTML,
+          transport: document.getElementById('transport-content').innerHTML,
+          prices: document.getElementById('prices-content').innerHTML,
+          flood: document.getElementById('flood-content').innerHTML,
+          area: document.getElementById('area-content').innerHTML
+        },
+        schoolMarkers: [...schoolMarkers],
+        stationList: [...stationList]
+      });
+    } catch { /* cache write failed */ }
+
+    document.getElementById('search-btn').disabled = false;
+  }
+
+  // ── Restore UI from localStorage cache ─────────────────────────────────────
+  function restoreFromCache(cached) {
+    const { lat, lng, pcFormatted, admin_district, wardDisplay, scores, html, schoolMarkers, stationList } = cached;
+    _searchLat = lat;
+    _searchLng = lng;
+    _scores = { ...scores };
+
+    // Show score banner
+    const scoreBanner = document.getElementById('score-banner');
+    scoreBanner.classList.add('visible');
+    document.getElementById('score-address').innerHTML = `${escHtml(pcFormatted)} <span class="cache-badge">cached</span>`;
+    document.getElementById('score-sub').textContent = `${admin_district || ''} · ${wardDisplay}`;
+
+    // Restore all card content
+    Object.entries(html).forEach(([key, val]) => {
+      const el = document.getElementById(key + '-content');
+      if (el) el.innerHTML = val;
+      hideSkeleton(key);
+    });
+
+    // Update score bars
+    if (scores.schools !== null) setBar('schools', scores.schools);
+    if (scores.crime !== null) setBar('crime', scores.crime);
+    if (scores.transport !== null) setBar('transport', scores.transport);
+    if (scores.flood !== null) setBar('flood', scores.flood);
+    updateCompositeScore();
+
+    // Restore map
+    initOrUpdateMap(lat, lng, pcFormatted, admin_district);
+    addSchoolMarkersToMap(schoolMarkers || []);
+    addStationMarkersToMap(stationList || []);
+
+    showToast('Loaded from cache (< 1 hour old)', 'info', 3000);
+  }
+
+  // ── Map management ─────────────────────────────────────────────────────────
+  function initOrUpdateMap(lat, lng, pcFormatted, admin_district) {
+    document.getElementById('map-wrap').classList.add('visible');
+
+    if (!mapInitialised) {
+      leafletMap = L.map('map').setView([lat, lng], 14);
+      // Light basemap for readability — CartoDB Positron
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(leafletMap);
+      mapInitialised = true;
+
+      leafletMap.on('tileerror', () => {
+        // Fallback to standard OSM tiles on CARTO failure
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19
+        }).addTo(leafletMap);
+      });
+    } else {
+      leafletMap.setView([lat, lng], 14);
+      mapMarkersAdded.forEach(m => leafletMap.removeLayer(m));
+      mapMarkersAdded = [];
+      const mapEl = document.getElementById('map');
+      const fbEl = document.getElementById('map-fallback');
+      mapEl.style.display = '';
+      fbEl.style.display = 'none';
+      fbEl.innerHTML = '';
+    }
+
+    // Postcode pin — blue circle
+    const makeIcon = (colour, size, emoji) => L.divIcon({
+      className: '',
+      html: emoji
+        ? `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${colour};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.55)}px">${emoji}</div>`
+        : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${colour};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
+      iconAnchor: [size / 2, size / 2]
+    });
+
+    const postcodeMarker = L.marker([lat, lng], { icon: makeIcon('#3b82f6', 20, '📍') })
+      .addTo(leafletMap)
+      .bindPopup(`<b>${pcFormatted}</b><br>${admin_district || ''}`);
+    mapMarkersAdded.push(postcodeMarker);
+
+    // Expose makeIcon for use by progressive marker adders
+    leafletMap._makeIcon = makeIcon;
+  }
+
+  function addSchoolMarkersToMap(markers) {
+    if (!leafletMap || !mapInitialised) return;
+    const makeIcon = leafletMap._makeIcon;
+    if (!makeIcon) return;
+    markers.forEach(s => {
+      const m = L.marker([s.lat, s.lng], { icon: makeIcon('#4ade80', 14, '🏫') })
+        .addTo(leafletMap)
+        .bindPopup(`<b>${escHtml(s.name)}</b><br>School`);
+      mapMarkersAdded.push(m);
+    });
+  }
+
+  function addStationMarkersToMap(stations) {
+    if (!leafletMap || !mapInitialised) return;
+    const makeIcon = leafletMap._makeIcon;
+    if (!makeIcon) return;
+    stations.forEach(s => {
+      const m = L.marker([s.lat, s.lng], { icon: makeIcon('#fb923c', 14, '🚉') })
+        .addTo(leafletMap)
+        .bindPopup(`<b>${escHtml(s.name)}</b><br>${s.dist.toFixed(2)} km away`);
+      mapMarkersAdded.push(m);
+    });
+
+    // Zoom to fit all markers if we have a good spread
+    if (mapMarkersAdded.length > 1) {
+      try {
+        const group = L.featureGroup(mapMarkersAdded);
+        leafletMap.fitBounds(group.getBounds().pad(0.2), { maxZoom: 15 });
+      } catch { /* bounds calc failed */ }
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  window.runSearch = runSearch;
+
+  document.getElementById('postcode-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runSearch();
+  });
+
+  window.addEventListener('load', () => {
+    document.getElementById('postcode-input').value = 'B90 2QS';
+    runSearch();
+  });
+
+})();
 </script>
 </body>
 </html>
