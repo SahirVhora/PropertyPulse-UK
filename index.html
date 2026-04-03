@@ -657,6 +657,59 @@
 (function () {
   'use strict';
 
+  // ── Config ─────────────────────────────────────────────────────────────────
+  const CONFIG = {
+    SCHOOLS_RADIUS_M: 4000,    // 4km — wider catches more semi-rural schools
+    TRANSPORT_RADIUS_M: 5000,  // 5km — suburban stations often 2–4km away
+    CRIME_MONTHS: 3,
+    CACHE_TTL_MS: 60 * 60 * 1000,
+    OVERPASS_TIMEOUT_MS: 18000,
+    OVERPASS_RETRY_DELAY_MS: 800,
+    // Ordered list of Overpass mirrors — tried in sequence on failure
+    OVERPASS_MIRRORS: [
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass-api.de/api/interpreter',
+      'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+    ]
+  };
+
+  // Known West Midlands Railway stations — precise OSM coordinates.
+  // Used as guaranteed fallback if Overpass API fails entirely.
+  // Covers B90/B91/B92/B93 and Birmingham suburbs on the same lines.
+  const WMR_STATIONS = [
+    { name: 'Shirley',                  lat: 52.4078, lng: -1.8285 },
+    { name: 'Whitlocks End',            lat: 52.3978, lng: -1.8128 },
+    { name: 'Widney Manor',             lat: 52.3974, lng: -1.8023 },
+    { name: 'Solihull',                 lat: 52.4126, lng: -1.7764 },
+    { name: 'Dorridge',                 lat: 52.3736, lng: -1.7443 },
+    { name: 'Lapworth',                 lat: 52.3377, lng: -1.7449 },
+    { name: 'Olton',                    lat: 52.4250, lng: -1.8052 },
+    { name: 'Acocks Green',             lat: 52.4482, lng: -1.8294 },
+    { name: 'Hall Green',               lat: 52.4263, lng: -1.8566 },
+    { name: 'Yardley Wood',             lat: 52.4050, lng: -1.8678 },
+    { name: 'Spring Road',              lat: 52.4420, lng: -1.8671 },
+    { name: 'Tyseley',                  lat: 52.4530, lng: -1.8450 },
+    { name: 'Small Heath',              lat: 52.4662, lng: -1.8562 },
+    { name: 'Lea Hall',                 lat: 52.4757, lng: -1.8034 },
+    { name: 'Stechford',                lat: 52.4820, lng: -1.8146 },
+    { name: 'Marston Green',            lat: 52.4651, lng: -1.7563 },
+    { name: 'Birmingham Moor Street',   lat: 52.4794, lng: -1.8934 },
+    { name: 'Birmingham New Street',    lat: 52.4778, lng: -1.9006 },
+    { name: 'Kings Norton',             lat: 52.4127, lng: -1.9182 },
+    { name: 'Bournville',               lat: 52.4311, lng: -1.9282 },
+    { name: 'Northfield',               lat: 52.4173, lng: -1.9540 },
+    { name: 'Longbridge',               lat: 52.4046, lng: -1.9741 },
+    { name: 'Barnt Green',              lat: 52.3623, lng: -1.9688 },
+    { name: 'Alvechurch',               lat: 52.3404, lng: -1.9558 },
+    { name: 'Redditch',                 lat: 52.3076, lng: -1.9393 },
+    { name: 'Wythall',                  lat: 52.3742, lng: -1.8830 },
+    { name: 'Earlswood (West Midlands)',lat: 52.3619, lng: -1.8461 },
+    { name: 'The Lakes',                lat: 52.3543, lng: -1.8162 },
+    { name: 'Wood End',                 lat: 52.3483, lng: -1.7953 },
+    { name: 'Danzey',                   lat: 52.3411, lng: -1.8096 },
+    { name: 'Henley-in-Arden',         lat: 52.2934, lng: -1.7855 },
+  ];
+
   // ── State ──────────────────────────────────────────────────────────────────
   let leafletMap = null;
   let mapInitialised = false;
@@ -667,9 +720,33 @@
   // Progressive score tracking — updated as each section resolves
   let _scores = { crime: null, schools: null, transport: null, flood: null };
 
+  // ── Debug mode (append ?debug=1 to URL) ───────────────────────────────────
+  const DEBUG = new URLSearchParams(window.location.search).get('debug') === '1';
+  const _dbgLog = [];
+  function debugLog(label, data) {
+    if (!DEBUG) return;
+    const entry = { ts: Date.now(), label, data };
+    _dbgLog.push(entry);
+    console.log(`[PropertyPulse] ${label}`, data);
+    const panel = document.getElementById('debug-panel');
+    if (panel) {
+      const row = document.createElement('div');
+      row.style.cssText = 'border-bottom:1px solid #2a2d3e;padding:4px 0;font-size:.72rem;';
+      row.textContent = `${new Date(entry.ts).toISOString().slice(11,23)} ${label}`;
+      panel.appendChild(row);
+    }
+  }
+  if (DEBUG) {
+    const dp = document.createElement('div');
+    dp.id = 'debug-panel';
+    dp.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:160px;overflow-y:auto;background:#0f1117;color:#8b8fa8;font-family:monospace;padding:8px 12px;z-index:9999;border-top:1px solid #2a2d3e;';
+    dp.innerHTML = '<b style="color:#60a5fa">Debug mode</b> — API call log:';
+    document.body.appendChild(dp);
+  }
+
   // ── Cache (localStorage, 1h TTL) ───────────────────────────────────────────
-  const CACHE_TTL = 60 * 60 * 1000; // 1 hour
-  const CACHE_PREFIX = 'upki2_';
+  const CACHE_TTL = CONFIG.CACHE_TTL_MS;
+  const CACHE_PREFIX = 'upki3_'; // bumped from upki2_ to bust stale empty-result cache
 
   function getCached(pc) {
     try {
@@ -685,11 +762,34 @@
     try { localStorage.setItem(CACHE_PREFIX + pc, JSON.stringify({ ts: Date.now(), ...data })); } catch { /* quota */ }
   }
 
-  // ── Fetch with timeout (5s) ────────────────────────────────────────────────
+  // ── Fetch with timeout ─────────────────────────────────────────────────────
   function fetchT(url, options = {}, timeoutMs = 5000) {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), timeoutMs);
-    return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+    debugLog(`fetch → ${url.slice(0, 80)}`, { timeoutMs });
+    const t0 = Date.now();
+    return fetch(url, { ...options, signal: ctrl.signal })
+      .finally(() => { clearTimeout(tid); debugLog(`fetch ← ${url.slice(0,60)} (${Date.now()-t0}ms)`, {}); });
+  }
+
+  // ── Fetch with retry across multiple mirror URLs ────────────────────────────
+  // Tries each url in the urls array in sequence, with a brief delay between.
+  // Returns the first successful Response, or rejects after all mirrors fail.
+  async function fetchMirrors(urls, options = {}, timeoutMs = CONFIG.OVERPASS_TIMEOUT_MS) {
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetchT(url, options, timeoutMs);
+        if (res.ok) return res;
+        throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        lastErr = e;
+        debugLog(`mirror failed: ${url.slice(0, 60)}`, { error: e.message });
+        // Brief pause before trying next mirror
+        await new Promise(r => setTimeout(r, CONFIG.OVERPASS_RETRY_DELAY_MS));
+      }
+    }
+    throw lastErr;
   }
 
   // ── Toast notifications ────────────────────────────────────────────────────
@@ -1158,33 +1258,52 @@
       return { crimeScore: 50 };
     }).finally(() => hideSkeleton('crime'));
 
-    // Schools — OSM Overpass
+    // Schools — OSM Overpass with mirror retry.
+    // Searches SCHOOLS_RADIUS_M (4km) and includes nodes, ways, and relations
+    // so that schools tagged at any geometry level are captured.
     const schoolMarkers = [];
-    const schoolsPromise = fetchT('https://overpass.kumi.systems/api/interpreter', {
-      method: 'POST',
-      body: `[out:json][timeout:15];(way["amenity"="school"](around:3000,${lat},${lng});node["amenity"="school"](around:3000,${lat},${lng}););out body center tags;`
-    }, 18000).then(r => r.ok ? r.json() : null).catch(() => null).then(osmData => {
+    const _schoolsQuery = `[out:json][timeout:20];(
+      node["amenity"="school"](around:${CONFIG.SCHOOLS_RADIUS_M},${lat},${lng});
+      way["amenity"="school"](around:${CONFIG.SCHOOLS_RADIUS_M},${lat},${lng});
+      relation["amenity"="school"](around:${CONFIG.SCHOOLS_RADIUS_M},${lat},${lng});
+    );out body center tags;`;
+    const schoolsPromise = fetchMirrors(
+      CONFIG.OVERPASS_MIRRORS,
+      { method: 'POST', body: _schoolsQuery },
+      CONFIG.OVERPASS_TIMEOUT_MS
+    ).then(r => r.json()).catch(() => null).then(osmData => {
       const elements = osmData?.elements || [];
       let schoolScore = 30;
+      let dataSource = 'OpenStreetMap';
 
       if (elements.length === 0) {
-        document.getElementById('schools-content').innerHTML = '<div class="unavailable">No schools found within 3km.</div>';
+        // Overpass returned nothing — show informative message with manual links
+        document.getElementById('schools-content').innerHTML = `
+          <div class="unavailable">No schools returned by OpenStreetMap for this area.</div>
+          <div style="margin-top:10px;font-size:.82rem;">
+            Check schools manually:
+            <a href="https://www.get-information-schools.service.gov.uk/Search?SearchType=Location&LocationSearchModel.AutoSuggestValue=&LocationSearchModel.Radius=3&LocationSearchModel.Postcode=${encodeURIComponent(pcFormatted)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Get Information about Schools ↗</a>
+            · <a href="https://www.locrating.com/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Locrating ↗</a>
+          </div>`;
+        showToast('School map data unavailable — links provided for manual lookup.', 'warn');
       } else {
         const withDist = elements.map(el => {
           const slat = el.lat ?? el.center?.lat;
           const slng = el.lon ?? el.center?.lon;
           const dist = (slat && slng) ? haversine(lat, lng, slat, slng) : null;
           return { ...el, _lat: slat, _lng: slng, dist };
-        }).sort((a, b) => (a.dist ?? 99) - (b.dist ?? 99)).slice(0, 8);
+        }).filter(el => el._lat && el._lng)
+          .sort((a, b) => (a.dist ?? 99) - (b.dist ?? 99))
+          .slice(0, 10);
 
-        // Score proxy: count of schools found (Ofsted not available via free public API)
+        // Score proxy: density of schools within radius
         const count = withDist.length;
         if (count >= 10) schoolScore = 80;
         else if (count >= 5) schoolScore = 65;
         else if (count >= 1) schoolScore = 50;
 
         withDist.forEach(s => {
-          if (s._lat && s._lng) schoolMarkers.push({ lat: s._lat, lng: s._lng, name: s.tags?.name || 'School' });
+          schoolMarkers.push({ lat: s._lat, lng: s._lng, name: s.tags?.name || 'School' });
         });
 
         const typeLabels = { community:'Community', academy:'Academy', free:'Free School', independent:'Independent', private:'Independent', grammar:'Grammar' };
@@ -1208,74 +1327,130 @@
         }).join('');
 
         document.getElementById('schools-content').innerHTML = html +
-          `<div style="font-size:.75rem;color:var(--muted);margin-top:10px;">⚠ Ofsted ratings not available via public API — check individual schools on Locrating or the <a href="https://www.gov.uk/ofsted-inspection-reports" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Ofsted website</a>.</div>` +
+          `<div style="font-size:.75rem;color:var(--muted);margin-top:10px;">⚠ Ofsted ratings not available via free public API — check schools on Locrating or the <a href="https://www.gov.uk/ofsted-inspection-reports" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Ofsted website</a>.</div>` +
           (isTGA ? `<a class="verify-link" href="https://www.solihull.gov.uk/schools-and-learning/school-admissions" target="_blank" rel="noopener noreferrer">✓ Verify catchment with Solihull Council ↗</a>` : '');
       }
 
       _scores.schools = schoolScore;
       setBar('schools', schoolScore);
       updateCompositeScore();
-      // Add school markers to map as soon as they're ready
       addSchoolMarkersToMap(schoolMarkers);
       return { schoolScore, schoolMarkers };
     }).catch(() => {
-      document.getElementById('schools-content').innerHTML = '<div class="unavailable">Schools data unavailable.</div>';
-      showToast('Schools data could not be loaded.', 'warn');
+      document.getElementById('schools-content').innerHTML = `
+        <div class="unavailable">Schools data unavailable (API error).</div>
+        <div style="margin-top:10px;font-size:.82rem;">
+          <a href="https://www.get-information-schools.service.gov.uk/Search?SearchType=Location&LocationSearchModel.Radius=3&LocationSearchModel.Postcode=${encodeURIComponent(pcFormatted)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Search on Get Information about Schools ↗</a>
+        </div>`;
+      showToast('Schools data could not be loaded — try the manual link in the card.', 'warn');
       _scores.schools = 30;
       setBar('schools', 30);
       updateCompositeScore();
       return { schoolScore: 30, schoolMarkers: [] };
     }).finally(() => hideSkeleton('schools'));
 
-    // Transport — OSM Overpass railway stations
+    // Transport — OSM Overpass, 5km radius, includes nodes+ways+halts.
+    // Falls back to hardcoded WMR_STATIONS if all Overpass mirrors fail,
+    // guaranteeing Shirley/Whitlocks End/Solihull always appear for B90/B91.
     const stationList = [];
-    const transportPromise = fetchT('https://overpass.kumi.systems/api/interpreter', {
-      method: 'POST',
-      body: `[out:json][timeout:10];node["railway"="station"](around:2000,${lat},${lng});out body;`
-    }, 13000).then(r => r.ok ? r.json() : null).catch(() => null).then(stData => {
-      let transportScore = 20;
+    // Query nodes AND ways with station/halt tags within TRANSPORT_RADIUS_M
+    const _transportQuery = `[out:json][timeout:15];(
+      node["railway"~"station|halt"](around:${CONFIG.TRANSPORT_RADIUS_M},${lat},${lng});
+      way["railway"~"station|halt"](around:${CONFIG.TRANSPORT_RADIUS_M},${lat},${lng});
+      node["public_transport"="station"](around:${CONFIG.TRANSPORT_RADIUS_M},${lat},${lng});
+    );out body center tags;`;
 
-      if (stData?.elements?.length > 0) {
-        const sorted = stData.elements.map(el => ({
+    function processStationElements(elements, source) {
+      // Normalise nodes and ways (ways have center coords)
+      return elements.map(el => {
+        const slat = el.lat ?? el.center?.lat;
+        const slng = el.lon ?? el.center?.lon;
+        if (!slat || !slng) return null;
+        const dist = haversine(lat, lng, slat, slng);
+        return {
           name: el.tags?.name || el.tags?.['name:en'] || 'Station',
-          lat: el.lat, lng: el.lon,
-          dist: haversine(lat, lng, el.lat, el.lon)
-        })).sort((a, b) => a.dist - b.dist).slice(0, 3);
-        stationList.push(...sorted);
+          lat: slat, lng: slng, dist, source
+        };
+      }).filter(Boolean);
+    }
 
-        const nearest = stationList[0]?.dist ?? Infinity;
-        if (nearest < 0.5) transportScore = 100;
-        else if (nearest < 1) transportScore = 80;
-        else if (nearest < 1.5) transportScore = 60;
-        else if (nearest < 2) transportScore = 40;
-        else transportScore = 20;
-
-        document.getElementById('transport-content').innerHTML = stationList.map(s => {
-          const walkMin = Math.round(s.dist / 0.08);
-          return `<div class="station-item">
-            <span class="station-name">🚉 ${escHtml(s.name)}</span>
-            <div class="station-meta">
-              <div class="station-dist">${s.dist.toFixed(2)} km</div>
-              <div class="station-walk">~${walkMin} min walk</div>
-            </div>
-          </div>`;
-        }).join('');
-      } else {
-        document.getElementById('transport-content').innerHTML = '<div class="unavailable">No rail stations found within 2km.</div>';
+    function renderStations(stations, source) {
+      if (stations.length === 0) {
+        document.getElementById('transport-content').innerHTML =
+          `<div class="unavailable">No rail stations found within ${CONFIG.TRANSPORT_RADIUS_M / 1000}km.</div>`;
+        return 20;
       }
 
+      const sorted = stations.sort((a, b) => a.dist - b.dist).slice(0, 5);
+      stationList.push(...sorted);
+
+      const nearest = sorted[0].dist;
+      let transportScore;
+      if (nearest < 0.5) transportScore = 100;
+      else if (nearest < 1) transportScore = 85;
+      else if (nearest < 1.5) transportScore = 70;
+      else if (nearest < 2) transportScore = 55;
+      else if (nearest < 3) transportScore = 40;
+      else transportScore = 25;
+
+      const sourceNote = source === 'fallback'
+        ? `<div style="font-size:.72rem;color:var(--muted);margin-top:8px;">⚠ Live map data unavailable — showing known West Midlands Railway stations.</div>`
+        : '';
+
+      document.getElementById('transport-content').innerHTML = sorted.map(s => {
+        const walkMin = Math.round(s.dist / 0.08);
+        const driveMin = Math.round(s.dist / 0.5);
+        const modeHint = s.dist > 2 ? `~${driveMin} min drive` : `~${walkMin} min walk`;
+        return `<div class="station-item">
+          <span class="station-name">🚉 ${escHtml(s.name)}</span>
+          <div class="station-meta">
+            <div class="station-dist">${s.dist.toFixed(2)} km</div>
+            <div class="station-walk">${modeHint}</div>
+          </div>
+        </div>`;
+      }).join('') + sourceNote;
+
+      return transportScore;
+    }
+
+    const transportPromise = fetchMirrors(
+      CONFIG.OVERPASS_MIRRORS,
+      { method: 'POST', body: _transportQuery },
+      CONFIG.OVERPASS_TIMEOUT_MS
+    ).then(r => r.json()).catch(() => null).then(stData => {
+      const elements = stData?.elements || [];
+      debugLog('transport elements from OSM', { count: elements.length });
+
+      let osmStations = processStationElements(elements, 'osm');
+
+      // If OSM returned nothing, use the hardcoded WMR fallback immediately
+      if (osmStations.length === 0) {
+        debugLog('transport: OSM returned 0 stations — using WMR fallback', {});
+        const fallback = WMR_STATIONS
+          .map(s => ({ ...s, dist: haversine(lat, lng, s.lat, s.lng), source: 'fallback' }))
+          .filter(s => s.dist <= CONFIG.TRANSPORT_RADIUS_M / 1000);
+        osmStations = fallback;
+      }
+
+      const transportScore = renderStations(osmStations, osmStations[0]?.source || 'osm');
       _scores.transport = transportScore;
       setBar('transport', transportScore);
       updateCompositeScore();
       addStationMarkersToMap(stationList);
       return { transportScore, stationList };
     }).catch(() => {
-      document.getElementById('transport-content').innerHTML = '<div class="unavailable">Transport data unavailable.</div>';
-      showToast('Transport data could not be loaded.', 'warn');
-      _scores.transport = 20;
-      setBar('transport', 20);
+      // All Overpass mirrors failed — guaranteed fallback to hardcoded WMR stations
+      debugLog('transport: all mirrors failed — using WMR fallback', {});
+      showToast('Live transport data unavailable — showing known WMR stations.', 'warn');
+      const fallback = WMR_STATIONS
+        .map(s => ({ ...s, dist: haversine(lat, lng, s.lat, s.lng), source: 'fallback' }))
+        .filter(s => s.dist <= CONFIG.TRANSPORT_RADIUS_M / 1000);
+      const transportScore = renderStations(fallback, 'fallback');
+      _scores.transport = transportScore;
+      setBar('transport', transportScore);
       updateCompositeScore();
-      return { transportScore: 20, stationList: [] };
+      addStationMarkersToMap(stationList);
+      return { transportScore, stationList };
     }).finally(() => hideSkeleton('transport'));
 
     // Flood — EA Flood Monitoring
