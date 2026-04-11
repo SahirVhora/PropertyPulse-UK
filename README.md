@@ -1,70 +1,64 @@
-# UK Postcode Checker
+# 🏠 PropertyPulse UK - Intelligence Dashboard
 
-A self-contained property research dashboard for UK postcodes. Enter any UK postcode and
-instantly see location details, crime stats, census demographics, nearby schools, and
-flood risk — all from free public APIs, no backend required.
+A high-performance, single-file property research tool that aggregates real-time public data to provide deep insights into any UK postcode. Designed for home buyers, renters, and real estate researchers to make data-driven decisions.
 
----
+## 🌟 Key Features
 
-## How to run
+### 📊 Multi-Dimensional Intelligence
+The dashboard transforms a simple postcode into a comprehensive intelligence report:
+- **Crime Analytics:** Street-level crime statistics and trends using the Police Data API.
+- **Education Insights:** Nearby schools discovery including ratings and proximity.
+- **Demographic Data:** Census 2021 ethnicity and tenure data from the ONS Beta API.
+- **Environmental Risk:** Real-time flood risk monitoring via the Environment Agency Flood API.
+- **Geospatial Mapping:** Integrated interactive maps powered by Leaflet and OpenStreetMap.
 
-Just open the file in a browser:
+### ⚡ Zero-Infrastructure Architecture
+- **Serverless:** Pure HTML/JS/CSS. No backend, no database, and no installation required.
+- **Direct API Integration:** Fetches data directly from government and public APIs in the browser.
+- **High Performance:** Optimized for speed with a modern dark-mode UI and responsive layout.
 
-```
-open ~/projects/claude-experiments/uk-postcode-checker/index.html
-```
+## 🛠️ Technical Stack
 
-Or double-click `index.html` in your file manager. No server, no install, no build step needed.
+- **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3
+- **Mapping:** [Leaflet.js](https://leafletjs.com/)
+- **Data Visualization:** [Chart.js](https://www.chartjs.org/)
+- **Styling:** Custom CSS Variables for a modern "Intelligence Dashboard" aesthetic.
 
----
+## 🚀 Getting Started
 
-## Google Places API key (optional)
+### How to Run
+Since this is a self-contained application, there is no build step:
+1. Clone the repository.
+2. Double-click `index.html` to open it in any modern web browser.
 
-The schools card has a column for Google star ratings. To enable it:
-
-1. Go to https://console.cloud.google.com
-2. Create a project → Enable **Places API**
-3. Create an API key (restrict it to your domain for safety)
-4. Open `index.html`, find this line near the top of the `<script>` block:
-
-   ```js
-   const GOOGLE_PLACES_KEY = "";
+### Google Places API (Optional)
+To enable star ratings for schools:
+1. Get an API key from the [Google Cloud Console](https://console.cloud.google.com).
+2. Enable the **Places API**.
+3. Open `index.html` and find the `GOOGLE_PLACES_KEY` constant.
+4. Paste your key between the quotes:
+   ```javascript
+   const GOOGLE_PLACES_KEY = "YOUR_KEY_HERE";
    ```
 
-5. Paste your key between the quotes and save.
+## 🔌 APIs Integrated
 
-Without a key, the column shows a muted note and everything else still works.
-
----
-
-## APIs used
-
-| API | Used for | Terms |
+| API | Purpose | License |
 |-----|----------|-------|
-| [Postcodes.io](https://postcodes.io) | Lat/lng, ward, district, LSOA code | Open — no auth needed |
-| [Police Data API](https://data.police.uk/docs/) | Street-level crime data | Open Government Licence |
-| [ONS Beta API](https://api.beta.ons.gov.uk) | Census 2021 ethnicity & tenure data | Open Government Licence |
-| [DfE Education Estates API](https://educationestatesapi.education.gov.uk) | Schools near postcode | Public — no auth needed |
-| [Environment Agency Flood API](https://environment.data.gov.uk/flood-monitoring/doc/reference) | Flood risk areas | Open Government Licence |
-| [OpenStreetMap](https://www.openstreetmap.org/copyright) | Embedded map tile | ODbL — attribution required |
-| [Chart.js CDN](https://cdnjs.cloudflare.com) | Charts | MIT |
+| **Postcodes.io** | Lat/Lng, Ward, District, LSOA codes | Open |
+| **Police Data API** | Street-level crime statistics | Open Government Licence |
+| **ONS Beta API** | Census 2021 ethnicity & tenure data | Open Government Licence |
+| **DfE Education API**| Schools search and details | Public |
+| **Environment Agency**| Flood risk monitoring | Open Government Licence |
+| **OpenStreetMap** | Map tiles and geospatial data | ODbL |
 
----
-
-## Folder structure
-
+## 📂 Project Structure
 ```
-uk-postcode-checker/
-├── index.html    ← The entire app (single file, open in browser)
-├── README.md     ← This file
-└── assets/       ← Reserved for future icons/images
+PropertyPulse-UK/
+├── index.html    ← Core Application (UI, Logic, and Styles)
+└── README.md     ← Documentation
 ```
 
----
-
-## Notes
-
-- Crime data is fetched for September 2024 (latest reliable month in the Police API).
-- ONS Census data is from the 2021 census and uses LSOA geography codes.
-- If the ONS beta API has CORS issues, the ethnicity/tenure cards show a fallback link to nomisweb.co.uk.
-- School catchment boundaries are indicative — always confirm with the local council.
+## 📝 Notes
+- **Data Accuracy:** All data is sourced from official public APIs. School catchment boundaries and crime dates are indicative of the latest available public releases.
+- **Privacy:** No user data is stored or transmitted to a private server; all API calls are made directly from the client's browser to the respective public endpoints.
