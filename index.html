@@ -146,6 +146,22 @@
   .btn-info:hover { background: var(--blue); border-color: var(--blue); color: #fff; }
   .btn-info[aria-expanded="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
 
+  .btn-settings {
+    background: var(--border);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: .95rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: background .2s, border-color .2s;
+    position: relative;
+  }
+  .btn-settings:hover { background: var(--purple); border-color: var(--purple); color: #fff; }
+
   .info-overlay {
     display: none;
     position: fixed;
@@ -168,6 +184,59 @@
     padding: 24px;
     position: relative;
   }
+  .settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .settings-overlay.open { display: flex; }
+  .settings-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 480px;
+    width: 100%;
+    padding: 24px;
+    position: relative;
+  }
+  .settings-input-group {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .settings-input-group label {
+    font-size: .85rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .settings-input-group input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: .9rem;
+    outline: none;
+  }
+  .settings-input-group input:focus { border-color: var(--purple); }
+  .btn-save-settings {
+    margin-top: 24px;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+
   .info-header {
     display: flex;
     justify-content: space-between;
@@ -542,6 +611,7 @@
     <div class="error-msg" id="error-msg" role="alert"></div>
   </div>
   <button class="btn-info" id="info-btn" aria-label="How scores are calculated" aria-expanded="false" title="How scores are calculated">?</button>
+  <button class="btn-settings" id="settings-btn" aria-label="Settings" title="Settings">⚙</button>
 </header>
 
 <main>
@@ -744,9 +814,9 @@
     document.body.appendChild(dp);
   }
 
-  // ── Cache (localStorage, 1h TTL) ───────────────────────────────────────────
-  const CACHE_TTL = CONFIG.CACHE_TTL_MS;
-  const CACHE_PREFIX = 'upki3_'; // bumped from upki2_ to bust stale empty-result cache
+  // ── Cache (localStorage, 24h TTL) ───────────────────────────────────────────
+  const CACHE_TTL = 24 * 60 * 60 * 1000;
+  const CACHE_PREFIX = 'pp-cache_'; // Updated prefix to align with new 24h TTL strategy
 
   function getCached(pc) {
     try {
@@ -830,6 +900,41 @@
   infoOverlay.addEventListener('click', e => { if (e.target === infoOverlay) closeInfoPanel(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && infoOverlay.classList.contains('open')) closeInfoPanel(); });
 
+  // ── Settings Panel Logic ─────────────────────────────────────────────────────
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsOverlay = document.getElementById('settings-overlay');
+  const settingsClose = document.getElementById('settings-close');
+  const settingsInput = document.getElementById('google-key-input');
+  const saveSettingsBtn = document.getElementById('save-settings');
+
+  function openSettingsPanel() {
+    settingsInput.value = localStorage.getItem('pp_google_key') || '';
+    settingsOverlay.classList.add('open');
+    settingsClose.focus();
+  }
+  function closeSettingsPanel() {
+    settingsOverlay.classList.remove('open');
+    settingsBtn.focus();
+  }
+
+  settingsBtn.addEventListener('click', () =>
+    settingsOverlay.classList.contains('open') ? closeSettingsPanel() : openSettingsPanel()
+  );
+  settingsClose.addEventListener('click', closeSettingsPanel);
+  settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) closeSettingsPanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && settingsOverlay.classList.contains('open')) closeSettingsPanel(); });
+
+  saveSettingsBtn.addEventListener('click', () => {
+    const key = settingsInput.value.trim();
+    localStorage.setItem('pp_google_key', key);
+    showToast(key ? 'API Key saved successfully' : 'API Key removed', 'info');
+    closeSettingsPanel();
+  });
+
+  function getGooglePlacesKey() {
+    return localStorage.getItem('pp_google_key');
+  }
+
   // ── Utilities ──────────────────────────────────────────────────────────────
   function haversine(lat1, lng1, lat2, lng2) {
     const R = 6371;
@@ -888,8 +993,10 @@
   }
 
   function validatePostcode(raw) {
-    const clean = raw.replace(/\s/g, '').toUpperCase();
-    return /^[A-Z]{1,2}[0-9][0-9A-Z]?[0-9][A-BD-HJLNP-UW-Z]{2}$/.test(clean) ? clean : null;
+    if (!raw) return null;
+    const clean = raw.toUpperCase().replace(/\s+/g, '');
+    const regex = /^([A-Z]{1,2}[0-9][A-Z0-9]?([0-9][A-Z]{2}))$/;
+    return regex.test(clean) ? clean : null;
   }
 
   function formatPostcode(clean) {
@@ -1579,7 +1686,7 @@
     await Promise.allSettled([crimePromise, schoolsPromise, transportPromise, floodPromise, pricesPromise]);
 
     // Final composite score is already live via updateCompositeScore() calls above.
-    // Cache the computed scores and rendered HTML for 1 hour.
+    // Cache the computed scores and rendered HTML for 24 hours.
     try {
       setCached(pc, {
         lat, lng, pcFormatted, admin_district, wardDisplay,
@@ -1632,7 +1739,7 @@
     addSchoolMarkersToMap(schoolMarkers || []);
     addStationMarkersToMap(stationList || []);
 
-    showToast('Loaded from cache (< 1 hour old)', 'info', 3000);
+    showToast('Loaded from cache (< 24 hours old)', 'info', 3000);
   }
 
   // ── Map management ─────────────────────────────────────────────────────────
