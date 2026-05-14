@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UK Property Intel</title>
+<meta property="og:image" content="https://sahirvhora.github.io/PropertyPulse-UK/preview.svg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sahirvhora.github.io/PropertyPulse-UK/preview.svg">
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -445,6 +451,19 @@
   .flood-area-item { font-size: .82rem; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--border); }
   .flood-area-item:last-child { border-bottom: none; }
 
+  /* ── Air Quality ─────────────────────────────────────────────────────────── */
+  .aq-status { font-size: 1.1rem; font-weight: 700; padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
+  .aq-good { background: #14532d; color: var(--green); }
+  .aq-moderate { background: #7c2d12; color: var(--amber); }
+  .aq-poor { background: #7f1d1d; color: var(--red); }
+  .aq-unknown { background: #2a2d3e; color: var(--muted); }
+
+  /* ── TfL Tube ─────────────────────────────────────────────────────────────── */
+  .tube-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+  .tube-item:last-child { border-bottom: none; }
+  .tube-name { font-weight: 600; }
+  .tube-dist { color: var(--blue); font-weight: 600; font-size: .85rem; }
+
   .area-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
   .area-row:last-child { border-bottom: none; }
   .area-key { color: var(--muted); }
@@ -698,6 +717,7 @@
         <div class="skel-line" style="height:14px;width:70%"></div>
       </div>
       <div id="flood-content"></div>
+      <p style="font-size:0.75rem;color:var(--text3,#888);margin-top:4px">⚠️ Based on current active flood alerts, not flood zone classification. Check <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener">Flood Map for Planning</a> for full risk.</p>
     </div>
 
     <div class="card">
@@ -708,6 +728,26 @@
         <div class="skel-line" style="height:14px;width:50%"></div>
       </div>
       <div id="area-content"></div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid-tfl-aq">
+    <div class="card">
+      <div class="card-title"><span>🚇</span> TfL Tube Stations</div>
+      <div class="skeleton active" id="skel-tfl">
+        <div class="skel-line" style="height:14px;width:70%"></div>
+        <div class="skel-line" style="height:14px;width:50%"></div>
+      </div>
+      <div id="tfl-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>🌫️</span> Air Quality (OpenAQ)</div>
+      <div class="skeleton active" id="skel-aq">
+        <div class="skel-line" style="height:14px;width:55%"></div>
+        <div class="skel-line" style="height:14px;width:75%"></div>
+      </div>
+      <div id="aq-content"></div>
     </div>
   </div>
 
@@ -1011,22 +1051,18 @@
   }
 
   // Update the composite score circle whenever any individual score changes.
-  // Uses 50 as a neutral placeholder for scores not yet loaded.
   function updateCompositeScore() {
     const { crime, schools, transport, flood } = _scores;
-    // Need at least one score to show something meaningful
-    const anyReady = [crime, schools, transport, flood].some(s => s !== null);
-    if (!anyReady) return;
-
-    const s = crime ?? 50;
-    const sc = schools ?? 50;
-    const tr = transport ?? 20;
-    const fl = flood ?? 50;
-
-    // Formula: Schools×0.3 + Crime×0.3 + Transport×0.2 + Flood×0.2
-    const composite = Math.round(sc * 0.3 + s * 0.3 + tr * 0.2 + fl * 0.2);
-    const col = scoreColour(composite);
     const circle = document.getElementById('score-circle');
+    // Only compute composite once all four scores have resolved
+    if (crime === null || schools === null || transport === null || flood === null) {
+      circle.textContent = '—';
+      circle.className = 'score-circle';
+      return;
+    }
+    // Formula: Schools×0.3 + Crime×0.3 + Transport×0.2 + Flood×0.2
+    const composite = Math.round(schools * 0.3 + crime * 0.3 + transport * 0.2 + flood * 0.2);
+    const col = scoreColour(composite);
     circle.textContent = composite;
     circle.className = 'score-circle ' + col;
   }
@@ -1257,7 +1293,8 @@
     document.getElementById('empty-state').style.display = 'none';
     document.getElementById('search-btn').disabled = true;
     ['schools', 'crime', 'transport', 'prices', 'flood', 'area'].forEach(showSkeleton);
-    ['schools-content', 'crime-content', 'transport-content', 'prices-content', 'flood-content', 'area-content'].forEach(id => {
+    ['schools', 'crime', 'transport', 'prices', 'flood', 'area', 'tfl', 'aq'].forEach(showSkeleton);
+    ['schools-content', 'crime-content', 'transport-content', 'prices-content', 'flood-content', 'area-content', 'tfl-content', 'aq-content'].forEach(id => {
       document.getElementById(id).innerHTML = '';
     });
     const scoreBanner = document.getElementById('score-banner');
@@ -1682,8 +1719,107 @@
     // ── Initialise map immediately with postcode pin ──
     initOrUpdateMap(lat, lng, pcFormatted, admin_district);
 
+    // ── TfL Tube station proximity (London only — no auth needed) ──
+    function isLondonPostcode(postcode) {
+      const prefix = postcode.trim().toUpperCase().match(/^([A-Z]{1,2})/)?.[1] || '';
+      const londonPrefixes = new Set(['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TW','UB','WD']);
+      return londonPrefixes.has(prefix);
+    }
+
+    const tflCard = document.getElementById('grid-tfl-aq').querySelector('.card');
+    const tflPromise = (async () => {
+      if (!isLondonPostcode(pc)) {
+        tflCard.style.display = 'none';
+        hideSkeleton('tfl');
+        return;
+      }
+      tflCard.style.display = '';
+      try {
+        const res = await fetchT(
+          `https://api.tfl.gov.uk/StopPoint?lat=${lat}&lon=${lng}&stopTypes=NaptanMetroStation&radius=1000`,
+          {}, 6000
+        );
+        if (!res.ok) throw new Error(`TfL HTTP ${res.status}`);
+        const data = await res.json();
+        const stops = (data.stopPoints || [])
+          .map(s => ({ name: s.commonName, dist: Math.round(s.distance) }))
+          .sort((a, b) => a.dist - b.dist);
+
+        if (stops.length === 0) {
+          document.getElementById('tfl-content').innerHTML =
+            '<div class="unavailable">No TfL Tube stations within 1km. (This feature applies to London postcodes only.)</div>';
+        } else {
+          document.getElementById('tfl-content').innerHTML =
+            stops.slice(0, 5).map(s =>
+              `<div class="tube-item">
+                <span class="tube-name">🚇 ${escHtml(s.name)}</span>
+                <span class="tube-dist">${s.dist}m away</span>
+              </div>`
+            ).join('') +
+            `<div style="font-size:.75rem;color:var(--muted);margin-top:8px;">Source: TfL StopPoint API · 1km radius</div>`;
+        }
+      } catch (e) {
+        document.getElementById('tfl-content').innerHTML =
+          '<div class="unavailable">TfL data unavailable. (Applies to London postcodes only.)</div>';
+      } finally {
+        hideSkeleton('tfl');
+      }
+    })();
+
+    // ── Air Quality (OpenAQ v2) ──
+    const aqPromise = (async () => {
+      try {
+        const res = await fetchT(
+          `https://api.openaq.org/v2/latest?coordinates=${lat},${lng}&radius=25000&limit=1`,
+          { headers: { 'Accept': 'application/json' } }, 7000
+        );
+        if (!res.ok) throw new Error(`OpenAQ HTTP ${res.status}`);
+        const data = await res.json();
+        const results = data.results || [];
+        if (results.length === 0) {
+          document.getElementById('aq-content').innerHTML =
+            '<div class="unavailable">No air quality monitoring stations found within 25km.</div>';
+          hideSkeleton('aq');
+          return;
+        }
+        const station = results[0];
+        const measurements = station.measurements || [];
+        const pm25 = measurements.find(m => m.parameter === 'pm25');
+        const pm10 = measurements.find(m => m.parameter === 'pm10');
+        const primary = pm25 || pm10;
+
+        let aqLabel, aqClass, aqDesc;
+        if (!primary) {
+          aqLabel = 'Data available'; aqClass = 'aq-unknown';
+          aqDesc = 'Monitoring station found but no PM2.5 or PM10 readings.';
+        } else {
+          const val = primary.value;
+          const param = primary.parameter.toUpperCase();
+          if (pm25) {
+            if (val < 10) { aqLabel = `✓ Good (PM2.5: ${val} µg/m³)`; aqClass = 'aq-good'; aqDesc = 'WHO threshold: &lt;10 µg/m³ = Good.'; }
+            else if (val < 25) { aqLabel = `⚠ Moderate (PM2.5: ${val} µg/m³)`; aqClass = 'aq-moderate'; aqDesc = 'WHO threshold: 10–25 µg/m³ = Moderate.'; }
+            else { aqLabel = `✗ Poor (PM2.5: ${val} µg/m³)`; aqClass = 'aq-poor'; aqDesc = 'WHO threshold: &gt;25 µg/m³ = Poor.'; }
+          } else {
+            if (val < 20) { aqLabel = `✓ Good (PM10: ${val} µg/m³)`; aqClass = 'aq-good'; aqDesc = 'WHO threshold: &lt;20 µg/m³ = Good.'; }
+            else if (val < 50) { aqLabel = `⚠ Moderate (PM10: ${val} µg/m³)`; aqClass = 'aq-moderate'; aqDesc = 'WHO threshold: 20–50 µg/m³ = Moderate.'; }
+            else { aqLabel = `✗ Poor (PM10: ${val} µg/m³)`; aqClass = 'aq-poor'; aqDesc = 'WHO threshold: &gt;50 µg/m³ = Poor.'; }
+          }
+        }
+
+        document.getElementById('aq-content').innerHTML = `
+          <div class="aq-status ${aqClass}">${aqLabel}</div>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:8px;">${aqDesc}</div>
+          <div style="font-size:.78rem;color:var(--muted);">Station: ${escHtml(station.location || 'Unknown')} · Source: OpenAQ v2</div>`;
+      } catch (e) {
+        document.getElementById('aq-content').innerHTML =
+          '<div class="unavailable">Air quality data unavailable.</div>';
+      } finally {
+        hideSkeleton('aq');
+      }
+    })();
+
     // ── Wait for all data to complete, then cache ──
-    await Promise.allSettled([crimePromise, schoolsPromise, transportPromise, floodPromise, pricesPromise]);
+    await Promise.allSettled([crimePromise, schoolsPromise, transportPromise, floodPromise, pricesPromise, tflPromise, aqPromise]);
 
     // Final composite score is already live via updateCompositeScore() calls above.
     // Cache the computed scores and rendered HTML for 24 hours.
@@ -1697,7 +1833,9 @@
           transport: document.getElementById('transport-content').innerHTML,
           prices: document.getElementById('prices-content').innerHTML,
           flood: document.getElementById('flood-content').innerHTML,
-          area: document.getElementById('area-content').innerHTML
+          area: document.getElementById('area-content').innerHTML,
+          tfl: document.getElementById('tfl-content').innerHTML,
+          aq: document.getElementById('aq-content').innerHTML
         },
         schoolMarkers: [...schoolMarkers],
         stationList: [...stationList]
@@ -1838,5 +1976,6 @@
 
 })();
 </script>
+  <script src="../../personal-command-center/shared-nav.js"></script>
 </body>
 </html>
