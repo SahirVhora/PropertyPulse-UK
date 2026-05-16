@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropertyPulse UK — Property Market Intelligence</title>
-<meta name="description" content="UK Property Intelligence Dashboard — postcode search with house prices, demographics, crime data, schools, and transport links.">
+    <title>PropertyPulse UK - Property Market Intelligence</title>
+<meta name="description" content="UK Property Intelligence Dashboard - postcode search with house prices, demographics, crime data, schools, and transport links.">
 <meta property="og:image" content="https://sahirvhora.github.io/PropertyPulse-UK/preview.svg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
@@ -352,7 +352,7 @@
     transition: opacity .2s;
   }
   .bar-tip:hover { opacity: 1; }
-  /* Tooltip via title attr styled via browser default — supplemented with JS tooltip below */
+  /* Tooltip via title attr styled via browser default - supplemented with JS tooltip below */
 
   /* ── Cards ───────────────────────────────────────────────────────────────── */
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -560,7 +560,7 @@
       </div>
       <div class="info-desc">
         Based on number of schools found within 3km via OpenStreetMap data.
-        Ofsted ratings aren't available via free public API — check individual schools on
+        Ofsted ratings aren't available via free public API - check individual schools on
         <a href="https://www.locrating.com/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Locrating</a>.
       </div>
       <div class="info-scale" style="margin-top:10px;">
@@ -610,7 +610,7 @@
         Flood Risk Score (0–100) · weight 20%
       </div>
       <div class="info-desc">
-        Based on EA Flood Monitoring API — number of active flood alert areas within 2km.
+        Based on EA Flood Monitoring API - number of active flood alert areas within 2km.
         <strong>Higher score = lower risk = better.</strong>
         Always verify with the official
         <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Flood Map for Planning</a>.
@@ -654,7 +654,7 @@
 
 <main>
   <div id="score-banner" class="score-banner">
-    <div class="score-circle" id="score-circle">—</div>
+    <div class="score-circle" id="score-circle"> - </div>
     <div class="score-info">
       <div class="score-address" id="score-address">Loading…</div>
       <div class="score-sub" id="score-sub"></div>
@@ -663,25 +663,25 @@
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#4ade80"></span>Schools</span>
           <div class="bar-track"><div class="bar-fill" id="bar-schools" style="width:0%;background:#4ade80"></div></div>
-          <span class="bar-val" id="bv-schools">—</span>
+          <span class="bar-val" id="bv-schools"> - </span>
           <span class="bar-tip" title="Schools score (0–100): density of schools within 3km. Higher is better. Weight: 30%">ⓘ</span>
         </div>
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#fb923c"></span>Crime</span>
           <div class="bar-track"><div class="bar-fill" id="bar-crime" style="width:0%;background:#fb923c"></div></div>
-          <span class="bar-val" id="bv-crime">—</span>
+          <span class="bar-val" id="bv-crime"> - </span>
           <span class="bar-tip" title="Crime score (0–100): 90=very low crime (&lt;20/mo), 10=very high (&gt;200/mo). Higher is better. Weight: 30%">ⓘ</span>
         </div>
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#60a5fa"></span>Transport</span>
           <div class="bar-track"><div class="bar-fill" id="bar-transport" style="width:0%;background:#60a5fa"></div></div>
-          <span class="bar-val" id="bv-transport">—</span>
+          <span class="bar-val" id="bv-transport"> - </span>
           <span class="bar-tip" title="Transport score (0–100): 100=station &lt;500m, 20=station &gt;2km away. Higher is better. Weight: 20%">ⓘ</span>
         </div>
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#a78bfa"></span>Flood Risk</span>
           <div class="bar-track"><div class="bar-fill" id="bar-flood" style="width:0%;background:#a78bfa"></div></div>
-          <span class="bar-val" id="bv-flood">—</span>
+          <span class="bar-val" id="bv-flood"> - </span>
           <span class="bar-tip" title="Flood score (0–100): 100=no flood alert areas nearby, 20=high risk (3+ areas). Higher is better. Weight: 20%">ⓘ</span>
         </div>
       </div>
@@ -788,13 +788,13 @@
 
   // ── Config ─────────────────────────────────────────────────────────────────
   const CONFIG = {
-    SCHOOLS_RADIUS_M: 4000,    // 4km — wider catches more semi-rural schools
-    TRANSPORT_RADIUS_M: 5000,  // 5km — suburban stations often 2–4km away
+    SCHOOLS_RADIUS_M: 4000,    // 4km - wider catches more semi-rural schools
+    TRANSPORT_RADIUS_M: 5000,  // 5km - suburban stations often 2–4km away
     CRIME_MONTHS: 3,
     CACHE_TTL_MS: 60 * 60 * 1000,
     OVERPASS_TIMEOUT_MS: 18000,
     OVERPASS_RETRY_DELAY_MS: 800,
-    // Ordered list of Overpass mirrors — tried in sequence on failure
+    // Ordered list of Overpass mirrors - tried in sequence on failure
     OVERPASS_MIRRORS: [
       'https://overpass.kumi.systems/api/interpreter',
       'https://overpass-api.de/api/interpreter',
@@ -802,7 +802,7 @@
     ]
   };
 
-  // Known West Midlands Railway stations — precise OSM coordinates.
+  // Known West Midlands Railway stations - precise OSM coordinates.
   // Used as guaranteed fallback if Overpass API fails entirely.
   // Covers B90/B91/B92/B93 and Birmingham suburbs on the same lines.
   const WMR_STATIONS = [
@@ -846,7 +846,7 @@
   let addressDebounceTimer = null;
   let _searchLat = 0, _searchLng = 0;
 
-  // Progressive score tracking — updated as each section resolves
+  // Progressive score tracking - updated as each section resolves
   let _scores = { crime: null, schools: null, transport: null, flood: null };
 
   // ── Debug mode (append ?debug=1 to URL) ───────────────────────────────────
@@ -869,7 +869,7 @@
     const dp = document.createElement('div');
     dp.id = 'debug-panel';
     dp.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:160px;overflow-y:auto;background:#0f1117;color:#8b8fa8;font-family:monospace;padding:8px 12px;z-index:9999;border-top:1px solid #2a2d3e;';
-    dp.innerHTML = '<b style="color:#60a5fa">Debug mode</b> — API call log:';
+    dp.innerHTML = '<b style="color:#60a5fa">Debug mode</b> - API call log:';
     document.body.appendChild(dp);
   }
 
@@ -1009,7 +1009,7 @@
   }
 
   function formatDate(str) {
-    if (!str) return '—';
+    if (!str) return ' - ';
     const rfc = str.match(/(\d{1,2}\s[A-Za-z]{3}\s\d{4})/);
     if (rfc) return rfc[1].replace(/^(\d)\s/, '0$1 ');
     const d = new Date(str);
@@ -1075,7 +1075,7 @@
     const circle = document.getElementById('score-circle');
     // Only compute composite once all four scores have resolved
     if (crime === null || schools === null || transport === null || flood === null) {
-      circle.textContent = '—';
+      circle.textContent = ' - ';
       circle.className = 'score-circle';
       return;
     }
@@ -1109,7 +1109,7 @@
       if (firstOption) {
         firstOption.click();
       } else {
-        // No suggestions shown yet — kick off a fresh fetch then auto-pick
+        // No suggestions shown yet - kick off a fresh fetch then auto-pick
         fetchAddressSuggestions(q, true);
       }
     }
@@ -1255,7 +1255,7 @@
       return;
     }
 
-    // type === 'place' — reverse-geocode lat/lng via postcodes.io
+    // type === 'place' - reverse-geocode lat/lng via postcodes.io
     const lat = el.getAttribute('data-lat');
     const lng = el.getAttribute('data-lng');
     await resolveLatLngToPostcode(lat, lng);
@@ -1289,10 +1289,10 @@
   // ── Main search ────────────────────────────────────────────────────────────
 
   // Test scenarios:
-  //   B90 2QS        — valid Shirley/Solihull postcode
-  //   "Shirley, Solihull" — address search via geocoding
-  //   INVALID        — should show error message
-  //   Slow API       — each section degrades independently with 5s timeout
+  //   B90 2QS        - valid Shirley/Solihull postcode
+  //   "Shirley, Solihull" - address search via geocoding
+  //   INVALID        - should show error message
+  //   Slow API       - each section degrades independently with 5s timeout
 
   async function runSearch() {
     const raw = document.getElementById('postcode-input').value.trim();
@@ -1375,7 +1375,7 @@
     // ── Fire all data fetches in parallel, update UI progressively ──
     const months = getMonths(3);
 
-    // Crime — three parallel month fetches, then process immediately
+    // Crime - three parallel month fetches, then process immediately
     const crimePromise = Promise.all(
       months.map(m =>
         fetchT(`https://data.police.uk/api/crimes-street/all-crime?lat=${lat}&lng=${lng}&date=${m}`, {}, 8000)
@@ -1421,7 +1421,7 @@
       return { crimeScore: 50 };
     }).finally(() => hideSkeleton('crime'));
 
-    // Schools — OSM Overpass with mirror retry.
+    // Schools - OSM Overpass with mirror retry.
     // Searches SCHOOLS_RADIUS_M (4km) and includes nodes, ways, and relations
     // so that schools tagged at any geometry level are captured.
     const schoolMarkers = [];
@@ -1440,7 +1440,7 @@
       let dataSource = 'OpenStreetMap';
 
       if (elements.length === 0) {
-        // Overpass returned nothing — show informative message with manual links
+        // Overpass returned nothing - show informative message with manual links
         document.getElementById('schools-content').innerHTML = `
           <div class="unavailable">No schools returned by OpenStreetMap for this area.</div>
           <div style="margin-top:10px;font-size:.82rem;">
@@ -1448,7 +1448,7 @@
             <a href="https://www.get-information-schools.service.gov.uk/Search?SearchType=Location&LocationSearchModel.AutoSuggestValue=&LocationSearchModel.Radius=3&LocationSearchModel.Postcode=${encodeURIComponent(pcFormatted)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Get Information about Schools ↗</a>
             · <a href="https://www.locrating.com/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Locrating ↗</a>
           </div>`;
-        showToast('School map data unavailable — links provided for manual lookup.', 'warn');
+        showToast('School map data unavailable - links provided for manual lookup.', 'warn');
       } else {
         const withDist = elements.map(el => {
           const slat = el.lat ?? el.center?.lat;
@@ -1476,7 +1476,7 @@
           const rawType = tags['school:type'] || tags['operator:type'] || '';
           const typeName = typeLabels[rawType.toLowerCase()] || (rawType ? rawType.charAt(0).toUpperCase() + rawType.slice(1) : 'School');
           const postcode = tags['addr:postcode'] || '';
-          const distStr = s.dist != null ? `~${s.dist.toFixed(1)}km` : '—';
+          const distStr = s.dist != null ? `~${s.dist.toFixed(1)}km` : ' - ';
           const tgaFlag = isTGA && name.toLowerCase().includes('tudor grange')
             ? `<span class="pill pill-tga">Likely TGA Catchment</span>` : '';
           return `<div class="school-item">
@@ -1490,7 +1490,7 @@
         }).join('');
 
         document.getElementById('schools-content').innerHTML = html +
-          `<div style="font-size:.75rem;color:var(--muted);margin-top:10px;">⚠ Ofsted ratings not available via free public API — check schools on Locrating or the <a href="https://www.gov.uk/ofsted-inspection-reports" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Ofsted website</a>.</div>` +
+          `<div style="font-size:.75rem;color:var(--muted);margin-top:10px;">⚠ Ofsted ratings not available via free public API - check schools on Locrating or the <a href="https://www.gov.uk/ofsted-inspection-reports" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Ofsted website</a>.</div>` +
           (isTGA ? `<a class="verify-link" href="https://www.solihull.gov.uk/schools-and-learning/school-admissions" target="_blank" rel="noopener noreferrer">✓ Verify catchment with Solihull Council ↗</a>` : '');
       }
 
@@ -1505,14 +1505,14 @@
         <div style="margin-top:10px;font-size:.82rem;">
           <a href="https://www.get-information-schools.service.gov.uk/Search?SearchType=Location&LocationSearchModel.Radius=3&LocationSearchModel.Postcode=${encodeURIComponent(pcFormatted)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Search on Get Information about Schools ↗</a>
         </div>`;
-      showToast('Schools data could not be loaded — try the manual link in the card.', 'warn');
+      showToast('Schools data could not be loaded - try the manual link in the card.', 'warn');
       _scores.schools = 30;
       setBar('schools', 30);
       updateCompositeScore();
       return { schoolScore: 30, schoolMarkers: [] };
     }).finally(() => hideSkeleton('schools'));
 
-    // Transport — OSM Overpass, 5km radius, includes nodes+ways+halts.
+    // Transport - OSM Overpass, 5km radius, includes nodes+ways+halts.
     // Falls back to hardcoded WMR_STATIONS if all Overpass mirrors fail,
     // guaranteeing Shirley/Whitlocks End/Solihull always appear for B90/B91.
     const stationList = [];
@@ -1557,7 +1557,7 @@
       else transportScore = 25;
 
       const sourceNote = source === 'fallback'
-        ? `<div style="font-size:.72rem;color:var(--muted);margin-top:8px;">⚠ Live map data unavailable — showing known West Midlands Railway stations.</div>`
+        ? `<div style="font-size:.72rem;color:var(--muted);margin-top:8px;">⚠ Live map data unavailable - showing known West Midlands Railway stations.</div>`
         : '';
 
       document.getElementById('transport-content').innerHTML = sorted.map(s => {
@@ -1588,7 +1588,7 @@
 
       // If OSM returned nothing, use the hardcoded WMR fallback immediately
       if (osmStations.length === 0) {
-        debugLog('transport: OSM returned 0 stations — using WMR fallback', {});
+        debugLog('transport: OSM returned 0 stations - using WMR fallback', {});
         const fallback = WMR_STATIONS
           .map(s => ({ ...s, dist: haversine(lat, lng, s.lat, s.lng), source: 'fallback' }))
           .filter(s => s.dist <= CONFIG.TRANSPORT_RADIUS_M / 1000);
@@ -1602,9 +1602,9 @@
       addStationMarkersToMap(stationList);
       return { transportScore, stationList };
     }).catch(() => {
-      // All Overpass mirrors failed — guaranteed fallback to hardcoded WMR stations
-      debugLog('transport: all mirrors failed — using WMR fallback', {});
-      showToast('Live transport data unavailable — showing known WMR stations.', 'warn');
+      // All Overpass mirrors failed - guaranteed fallback to hardcoded WMR stations
+      debugLog('transport: all mirrors failed - using WMR fallback', {});
+      showToast('Live transport data unavailable - showing known WMR stations.', 'warn');
       const fallback = WMR_STATIONS
         .map(s => ({ ...s, dist: haversine(lat, lng, s.lat, s.lng), source: 'fallback' }))
         .filter(s => s.dist <= CONFIG.TRANSPORT_RADIUS_M / 1000);
@@ -1616,7 +1616,7 @@
       return { transportScore, stationList };
     }).finally(() => hideSkeleton('transport'));
 
-    // Flood — EA Flood Monitoring
+    // Flood - EA Flood Monitoring
     const floodPromise = fetchT(
       `https://environment.data.gov.uk/flood-monitoring/id/floodAreas?lat=${lat}&long=${lng}&dist=2`,
       {}, 5000
@@ -1629,7 +1629,7 @@
           <div style="font-size:.78rem;color:var(--muted);margin-top:8px;">
             Check manually: <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Flood Map for Planning ↗</a>
           </div>`;
-        showToast('Flood data unavailable — check planning portal manually.', 'warn');
+        showToast('Flood data unavailable - check planning portal manually.', 'warn');
       } else {
         const areas = fd.items || [];
         const count = areas.length;
@@ -1667,7 +1667,7 @@
       return { floodScore: 50 };
     }).finally(() => hideSkeleton('flood'));
 
-    // Prices — Land Registry
+    // Prices - Land Registry
     const pricesPromise = fetchT(
       `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?_page=0&_pageSize=10&propertyAddress.postcode=${encodeURIComponent(pcFormatted)}&_sort=-transactionDate`,
       {}, 6000
@@ -1713,18 +1713,18 @@
       document.getElementById('prices-content').innerHTML = '<div class="unavailable">Price data unavailable.</div>';
     }).finally(() => hideSkeleton('prices'));
 
-    // Area summary — already have all data from postcodes.io, render immediately
+    // Area summary - already have all data from postcodes.io, render immediately
     try {
-      const lsoa = codes?.lsoa11 || codes?.lsoa21 || '—';
+      const lsoa = codes?.lsoa11 || codes?.lsoa21 || ' - ';
       const rows = [
-        ['District', admin_district || '—'],
-        ['Ward', admin_ward || '—'],
-        ['Parish', parish || '—'],
-        ['Region', region || '—'],
-        ['Country', country || '—'],
-        ['Constituency', parliamentary_constituency || '—'],
+        ['District', admin_district || ' - '],
+        ['Ward', admin_ward || ' - '],
+        ['Parish', parish || ' - '],
+        ['Region', region || ' - '],
+        ['Country', country || ' - '],
+        ['Constituency', parliamentary_constituency || ' - '],
         ['LSOA Code', lsoa],
-        ['Postcode Sector', pcFormatted.replace(/[A-Z]{2}$/, '') || '—']
+        ['Postcode Sector', pcFormatted.replace(/[A-Z]{2}$/, '') || ' - ']
       ];
       document.getElementById('area-content').innerHTML = rows.map(([k, v]) =>
         `<div class="area-row"><span class="area-key">${escHtml(k)}</span><span class="area-val">${escHtml(v)}</span></div>`
@@ -1738,7 +1738,7 @@
     // ── Initialise map immediately with postcode pin ──
     initOrUpdateMap(lat, lng, pcFormatted, admin_district);
 
-    // ── TfL Tube station proximity (London only — no auth needed) ──
+    // ── TfL Tube station proximity (London only - no auth needed) ──
     function isLondonPostcode(postcode) {
       const prefix = postcode.trim().toUpperCase().match(/^([A-Z]{1,2})/)?.[1] || '';
       const londonPrefixes = new Set(['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TW','UB','WD']);
@@ -1905,7 +1905,7 @@
 
     if (!mapInitialised) {
       leafletMap = L.map('map').setView([lat, lng], 14);
-      // Light basemap for readability — CartoDB Positron
+      // Light basemap for readability - CartoDB Positron
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
@@ -1931,7 +1931,7 @@
       fbEl.innerHTML = '';
     }
 
-    // Postcode pin — blue circle
+    // Postcode pin - blue circle
     const makeIcon = (colour, size, emoji) => L.divIcon({
       className: '',
       html: emoji
@@ -1997,7 +1997,7 @@
 </script>
   <script src="../../personal-command-center/shared-nav.js"></script>
   <div style="text-align:center;padding:12px 20px;background:var(--card);border-top:1px solid var(--border);margin-top:20px;font-size:13px;color:var(--muted)">
-    🏠 <b>Found your area?</b> Search properties & calculate stamp duty at 
+    🏠 <b>Found your area?</b> Search properties & calculate stamp duty at
     <a href="https://sahirvhora.github.io/UK-HomeFinder/" style="color:var(--blue);font-weight:600">UK HomeFinder →</a>
   </div>
 </body>

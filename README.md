@@ -1,11 +1,11 @@
-# 🏠 UK Property Toolkit — PropertyPulse-UK
+# 🏠 UK Property Toolkit - PropertyPulse-UK
 
 **The flagship dashboard: postcode intelligence with scoring, mapping, and multi-dimensional analytics.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PropertyPulse](https://img.shields.io/badge/toolkit-flagship-blue)](https://sahirvhora.github.io/PropertyPulse-UK)
 
-Part of the **[UK Property Toolkit](https://github.com/SahirVhora?tab=repositories&q=uk-property+OR+PropertyPulse+OR+HomeFinder+OR+postcode-checker)** — three free tools for UK home buyers.
+Part of the **[UK Property Toolkit](https://github.com/SahirVhora?tab=repositories&q=uk-property+OR+PropertyPulse+OR+HomeFinder+OR+postcode-checker)** - three free tools for UK home buyers.
 
 | Tool | Purpose | Best For |
 |---|---|---|
@@ -32,7 +32,7 @@ Part of the **[UK Property Toolkit](https://github.com/SahirVhora?tab=repositori
 - **Composite Scoring:** Weighted scores across crime, schools, transport, and flood
 
 ### ⚡ Zero-Infrastructure Architecture
-- **Serverless:** Pure HTML/JS/CSS — no backend, no database, no install
+- **Serverless:** Pure HTML/JS/CSS - no backend, no database, no install
 - **Direct API Integration:** Fetches from government/public APIs in-browser
 - **Dark-mode UI:** Modern intelligence dashboard aesthetic, responsive layout
 
@@ -78,14 +78,14 @@ PropertyPulse-UK/
 
 ## 🔗 Also in the UK Property Toolkit
 
-- **[UK-HomeFinder](https://github.com/SahirVhora/UK-HomeFinder)** — Property comparison tracker, SDLT calculator, readiness checklist, Rightmove/Zoopla URL parser
-- **[uk-postcode-checker](https://github.com/SahirVhora/uk-postcode-checker)** — Fast demographics: crime charts, ethnicity/religion/tenure breakdowns, schools, transport
+- **[UK-HomeFinder](https://github.com/SahirVhora/UK-HomeFinder)** - Property comparison tracker, SDLT calculator, readiness checklist, Rightmove/Zoopla URL parser
+- **[uk-postcode-checker](https://github.com/SahirVhora/uk-postcode-checker)** - Fast demographics: crime charts, ethnicity/religion/tenure breakdowns, schools, transport
 
 ## 📝 Notes
 - All data sourced from official public APIs. School catchment boundaries are indicative.
-- No user data is stored or transmitted — all API calls are client-side.
+- No user data is stored or transmitted - all API calls are client-side.
 - Privacy-first: no tracking, no ads, no analytics.
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT - see [LICENSE](LICENSE)
