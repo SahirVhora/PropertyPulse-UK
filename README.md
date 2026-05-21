@@ -13,8 +13,6 @@ Part of the **[UK Property Toolkit](https://github.com/SahirVhora?tab=repositori
 | [UK-HomeFinder](https://github.com/SahirVhora/UK-HomeFinder) | Property tracking + SDLT + checklist | Active buyers comparing properties |
 | [uk-postcode-checker](https://github.com/SahirVhora/uk-postcode-checker) | Quick demographic lookup | Fast postcode overview |
 | [uk-mortgage-rate-monitor](https://github.com/SahirVhora/uk-mortgage-rate-monitor) | Daily 2-year fixed mortgage monitoring | Rate timing and lock/watch decisions |
-| [uk-mortgage-rate-monitor](https://github.com/SahirVhora/uk-mortgage-rate-monitor) | Daily 2-year fixed mortgage monitoring | Rate timing and lock/watch decisions |
-| [uk-mortgage-rate-monitor](https://github.com/SahirVhora/uk-mortgage-rate-monitor) | Daily 2-year fixed mortgage monitoring | Rate timing and lock/watch decisions |
 
 👉 **[Launch PropertyPulse-UK](https://sahirvhora.github.io/PropertyPulse-UK)**
 
