@@ -38,7 +38,6 @@ Part of the **[UK Property Toolkit](https://github.com/SahirVhora?tab=repositori
 
 - **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3
 - **Mapping:** [Leaflet.js](https://leafletjs.com/)
-- **Data Visualization:** [Chart.js](https://www.chartjs.org/)
 
 ## 🚀 Getting Started
 
