@@ -136,15 +136,6 @@
   .toolkit-links { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; font-size: .78rem; color: var(--muted); }
   .toolkit-links a { color: var(--blue); text-decoration: none; font-weight: 700; }
   .toolkit-links a:hover { text-decoration: underline; }
-  .toolkit-links { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; font-size: .78rem; color: var(--muted); }
-  .toolkit-links a { color: var(--blue); text-decoration: none; font-weight: 700; }
-  .toolkit-links a:hover { text-decoration: underline; }
-  .toolkit-links { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; font-size: .78rem; color: var(--muted); }
-  .toolkit-links a { color: var(--blue); text-decoration: none; font-weight: 700; }
-  .toolkit-links a:hover { text-decoration: underline; }
-  .toolkit-links { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; font-size: .78rem; color: var(--muted); }
-  .toolkit-links a { color: var(--blue); text-decoration: none; font-weight: 700; }
-  .toolkit-links a:hover { text-decoration: underline; }
 
   /* ── Info button + panel ─────────────────────────────────────────────────── */
   .btn-info {
@@ -539,7 +530,7 @@
     <div class="info-section">
       <div class="info-section-title">
         <span class="info-dot" style="background:var(--blue)"></span>
-        Overall Score (0–100)
+        Overall Score (0-100)
       </div>
       <div class="info-desc">
         Composite desirability rating for the area. <strong>Higher is better.</strong>
@@ -547,16 +538,16 @@
       </div>
       <div class="info-formula">Score = (Schools×0.3) + (Crime×0.3) + (Transport×0.2) + (Flood×0.2)</div>
       <div class="info-scale" style="margin-top:10px;">
-        <div class="info-scale-seg" style="background:#7f1d1d;color:var(--red)">0–39<br>Poor</div>
-        <div class="info-scale-seg" style="background:#7c2d12;color:var(--amber)">40–69<br>Average</div>
-        <div class="info-scale-seg" style="background:#14532d;color:var(--green)">70–100<br>Good</div>
+        <div class="info-scale-seg" style="background:#7f1d1d;color:var(--red)">0-39<br>Poor</div>
+        <div class="info-scale-seg" style="background:#7c2d12;color:var(--amber)">40-69<br>Average</div>
+        <div class="info-scale-seg" style="background:#14532d;color:var(--green)">70-100<br>Good</div>
       </div>
     </div>
 
     <div class="info-section">
       <div class="info-section-title">
         <span class="info-dot" style="background:#4ade80"></span>
-        Schools Score (0–100) · weight 30%
+        Schools Score (0-100) · weight 30%
       </div>
       <div class="info-desc">
         Based on number of schools found within 3km via OpenStreetMap data.
@@ -565,8 +556,8 @@
       </div>
       <div class="info-scale" style="margin-top:10px;">
         <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">30<br>0 schools</div>
-        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--muted)">50<br>1–4 schools</div>
-        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">65<br>5–9 schools</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--muted)">50<br>1-4 schools</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">65<br>5-9 schools</div>
         <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">80<br>10+ schools</div>
       </div>
     </div>
@@ -574,7 +565,7 @@
     <div class="info-section">
       <div class="info-section-title">
         <span class="info-dot" style="background:#fb923c"></span>
-        Crime Score (0–100) · weight 30%
+        Crime Score (0-100) · weight 30%
       </div>
       <div class="info-desc">
         Based on Police UK street-crime incidents averaged over 3 months.
@@ -583,15 +574,15 @@
       </div>
       <div class="info-scale" style="margin-top:10px;">
         <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">10<br>&gt;200/mo</div>
-        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">30–50<br>100–200/mo</div>
-        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">70–90<br>&lt;50/mo</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">30-50<br>100-200/mo</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">70-90<br>&lt;50/mo</div>
       </div>
     </div>
 
     <div class="info-section">
       <div class="info-section-title">
         <span class="info-dot" style="background:#60a5fa"></span>
-        Transport Score (0–100) · weight 20%
+        Transport Score (0-100) · weight 20%
       </div>
       <div class="info-desc">
         Distance to nearest railway station found via OpenStreetMap.
@@ -599,15 +590,15 @@
       </div>
       <div class="info-scale" style="margin-top:10px;">
         <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--green)">100<br>&lt;500m</div>
-        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">60–80<br>0.5–1.5km</div>
-        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">20–40<br>&gt;1.5km</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--amber)">60-80<br>0.5-1.5km</div>
+        <div class="info-scale-seg" style="background:#1a1d27;border:1px solid var(--border);color:var(--red)">20-40<br>&gt;1.5km</div>
       </div>
     </div>
 
     <div class="info-section">
       <div class="info-section-title">
         <span class="info-dot" style="background:#a78bfa"></span>
-        Flood Risk Score (0–100) · weight 20%
+        Flood Risk Score (0-100) · weight 20%
       </div>
       <div class="info-desc">
         Based on EA Flood Monitoring API - number of active flood alert areas within 2km.
@@ -617,7 +608,7 @@
       </div>
       <div class="info-scale" style="margin-top:10px;">
         <div class="info-scale-seg" style="background:#14532d;color:var(--green)">100<br>0 areas</div>
-        <div class="info-scale-seg" style="background:#7c2d12;color:var(--amber)">60<br>1–2 areas</div>
+        <div class="info-scale-seg" style="background:#7c2d12;color:var(--amber)">60<br>1-2 areas</div>
         <div class="info-scale-seg" style="background:#7f1d1d;color:var(--red)">20<br>3+ areas</div>
       </div>
     </div>
@@ -664,25 +655,25 @@
           <span class="bar-label"><span class="bar-dot" style="background:#4ade80"></span>Schools</span>
           <div class="bar-track"><div class="bar-fill" id="bar-schools" style="width:0%;background:#4ade80"></div></div>
           <span class="bar-val" id="bv-schools"> - </span>
-          <span class="bar-tip" title="Schools score (0–100): density of schools within 3km. Higher is better. Weight: 30%">ⓘ</span>
+          <span class="bar-tip" title="Schools score (0-100): density of schools within 3km. Higher is better. Weight: 30%">ⓘ</span>
         </div>
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#fb923c"></span>Crime</span>
           <div class="bar-track"><div class="bar-fill" id="bar-crime" style="width:0%;background:#fb923c"></div></div>
           <span class="bar-val" id="bv-crime"> - </span>
-          <span class="bar-tip" title="Crime score (0–100): 90=very low crime (&lt;20/mo), 10=very high (&gt;200/mo). Higher is better. Weight: 30%">ⓘ</span>
+          <span class="bar-tip" title="Crime score (0-100): 90=very low crime (&lt;20/mo), 10=very high (&gt;200/mo). Higher is better. Weight: 30%">ⓘ</span>
         </div>
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#60a5fa"></span>Transport</span>
           <div class="bar-track"><div class="bar-fill" id="bar-transport" style="width:0%;background:#60a5fa"></div></div>
           <span class="bar-val" id="bv-transport"> - </span>
-          <span class="bar-tip" title="Transport score (0–100): 100=station &lt;500m, 20=station &gt;2km away. Higher is better. Weight: 20%">ⓘ</span>
+          <span class="bar-tip" title="Transport score (0-100): 100=station &lt;500m, 20=station &gt;2km away. Higher is better. Weight: 20%">ⓘ</span>
         </div>
         <div class="bar-row">
           <span class="bar-label"><span class="bar-dot" style="background:#a78bfa"></span>Flood Risk</span>
           <div class="bar-track"><div class="bar-fill" id="bar-flood" style="width:0%;background:#a78bfa"></div></div>
           <span class="bar-val" id="bv-flood"> - </span>
-          <span class="bar-tip" title="Flood score (0–100): 100=no flood alert areas nearby, 20=high risk (3+ areas). Higher is better. Weight: 20%">ⓘ</span>
+          <span class="bar-tip" title="Flood score (0-100): 100=no flood alert areas nearby, 20=high risk (3+ areas). Higher is better. Weight: 20%">ⓘ</span>
         </div>
       </div>
     </div>
@@ -789,9 +780,9 @@
   // ── Config ─────────────────────────────────────────────────────────────────
   const CONFIG = {
     SCHOOLS_RADIUS_M: 4000,    // 4km - wider catches more semi-rural schools
-    TRANSPORT_RADIUS_M: 5000,  // 5km - suburban stations often 2–4km away
+    TRANSPORT_RADIUS_M: 5000,  // 5km - suburban stations often 2-4km away
     CRIME_MONTHS: 3,
-    CACHE_TTL_MS: 60 * 60 * 1000,
+    CACHE_TTL_MS: 24 * 60 * 60 * 1000,
     OVERPASS_TIMEOUT_MS: 18000,
     OVERPASS_RETRY_DELAY_MS: 800,
     // Ordered list of Overpass mirrors - tried in sequence on failure
@@ -1816,11 +1807,11 @@
           const param = primary.parameter.toUpperCase();
           if (pm25) {
             if (val < 10) { aqLabel = `✓ Good (PM2.5: ${val} µg/m³)`; aqClass = 'aq-good'; aqDesc = 'WHO threshold: &lt;10 µg/m³ = Good.'; }
-            else if (val < 25) { aqLabel = `⚠ Moderate (PM2.5: ${val} µg/m³)`; aqClass = 'aq-moderate'; aqDesc = 'WHO threshold: 10–25 µg/m³ = Moderate.'; }
+            else if (val < 25) { aqLabel = `⚠ Moderate (PM2.5: ${val} µg/m³)`; aqClass = 'aq-moderate'; aqDesc = 'WHO threshold: 10-25 µg/m³ = Moderate.'; }
             else { aqLabel = `✗ Poor (PM2.5: ${val} µg/m³)`; aqClass = 'aq-poor'; aqDesc = 'WHO threshold: &gt;25 µg/m³ = Poor.'; }
           } else {
             if (val < 20) { aqLabel = `✓ Good (PM10: ${val} µg/m³)`; aqClass = 'aq-good'; aqDesc = 'WHO threshold: &lt;20 µg/m³ = Good.'; }
-            else if (val < 50) { aqLabel = `⚠ Moderate (PM10: ${val} µg/m³)`; aqClass = 'aq-moderate'; aqDesc = 'WHO threshold: 20–50 µg/m³ = Moderate.'; }
+            else if (val < 50) { aqLabel = `⚠ Moderate (PM10: ${val} µg/m³)`; aqClass = 'aq-moderate'; aqDesc = 'WHO threshold: 20-50 µg/m³ = Moderate.'; }
             else { aqLabel = `✗ Poor (PM10: ${val} µg/m³)`; aqClass = 'aq-poor'; aqDesc = 'WHO threshold: &gt;50 µg/m³ = Poor.'; }
           }
         }
@@ -1995,7 +1986,6 @@
 
 })();
 </script>
-  <script src="../../personal-command-center/shared-nav.js"></script>
   <div style="text-align:center;padding:12px 20px;background:var(--card);border-top:1px solid var(--border);margin-top:20px;font-size:13px;color:var(--muted)">
     🏠 <b>Found your area?</b> Search properties & calculate stamp duty at
     <a href="https://sahirvhora.github.io/UK-HomeFinder/" style="color:var(--blue);font-weight:600">UK HomeFinder →</a>
