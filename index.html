@@ -686,6 +686,11 @@
     </div>
   </div>
 
+  <div class="card" id="postcode-compare-card" style="display:none;margin:16px 0;">
+    <div class="card-title"><span>📌</span> Saved Postcode Comparison</div>
+    <div id="postcode-compare-content"></div>
+  </div>
+
   <div class="grid">
     <div class="card">
       <div class="card-title"><span>🏫</span> Schools Nearby</div>
@@ -846,6 +851,32 @@
 
   // Progressive score tracking - updated as each section resolves
   let _scores = { crime: null, schools: null, transport: null, flood: null };
+  let _latestPriceTrend = 'No price trend yet';
+
+  function renderPostcodeComparison() {
+    const saved = JSON.parse(localStorage.getItem('propertypulse_saved_compare') || '[]').slice(0, 3);
+    const card = document.getElementById('postcode-compare-card');
+    const el = document.getElementById('postcode-compare-content');
+    if (!card || !el || saved.length === 0) { if (card) card.style.display = 'none'; return; }
+    card.style.display = '';
+    const cols = ['schools', 'crime', 'transport', 'flood'];
+    el.innerHTML = `<div style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">Last 3 searched postcodes are saved locally for side-by-side review.</div>
+      <div style="display:grid;grid-template-columns:repeat(${saved.length},minmax(0,1fr));gap:10px;overflow:auto;">
+        ${saved.map(item => `<div style="border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--bg);min-width:180px;">
+          <div style="font-weight:800;color:var(--blue);margin-bottom:4px;">${escHtml(item.pc)}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;">${escHtml(item.area || '')}</div>
+          ${cols.map(k => `<div class="area-row"><span class="area-key">${k}</span><span class="area-val">${item.scores[k] ?? '-'}</span></div>`).join('')}
+          <div class="area-row"><span class="area-key">Price trend</span><span class="area-val">${escHtml(item.priceTrend || '-')}</span></div>
+        </div>`).join('')}
+      </div>`;
+  }
+
+  function savePostcodeComparison(item) {
+    const saved = JSON.parse(localStorage.getItem('propertypulse_saved_compare') || '[]');
+    const updated = [item, ...saved.filter(x => x.pc !== item.pc)].slice(0, 3);
+    localStorage.setItem('propertypulse_saved_compare', JSON.stringify(updated));
+    renderPostcodeComparison();
+  }
 
   // ── Debug mode (append ?debug=1 to URL) ───────────────────────────────────
   const DEBUG = new URLSearchParams(window.location.search).get('debug') === '1';
@@ -1680,6 +1711,7 @@
       const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
       const trend = prices[0] > prices[prices.length - 1] ? '↑ Prices rising' :
         prices[0] < prices[prices.length - 1] ? '↓ Prices falling' : '→ Prices stable';
+      _latestPriceTrend = trend;
 
       const uriTypeMap = {
         'detached':'Detached', 'semi-detached':'Semi-detached', 'terraced':'Terraced',
@@ -1839,6 +1871,7 @@
     await Promise.allSettled([crimePromise, schoolsPromise, transportPromise, floodPromise, pricesPromise, tflPromise, aqPromise]);
 
     // Final composite score is already live via updateCompositeScore() calls above.
+    savePostcodeComparison({ pc: pcFormatted, area: `${admin_district || ''} ${wardDisplay || ''}`.trim(), scores: { ..._scores }, priceTrend: _latestPriceTrend });
     // Cache the computed scores and rendered HTML for 24 hours.
     try {
       setCached(pc, {
@@ -1895,6 +1928,7 @@
     addStationMarkersToMap(stationList || []);
 
     showToast('Loaded from cache (< 24 hours old)', 'info', 3000);
+    savePostcodeComparison({ pc: pcFormatted, area: `${admin_district || ''} ${wardDisplay || ''}`.trim(), scores: { ..._scores }, priceTrend: 'Cached price trend' });
   }
 
   // ── Map management ─────────────────────────────────────────────────────────
