@@ -785,6 +785,16 @@
   </div>
 </main>
 
+<div class="info-overlay" id="settings-overlay" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="info-panel">
+    <button class="btn-close" id="settings-close" aria-label="Close settings">×</button>
+    <h2>Settings</h2>
+    <label for="google-key-input">Optional Google Places browser key</label>
+    <input id="google-key-input" type="password" autocomplete="off">
+    <p>Restrict this browser key to this website and the required Google APIs.</p>
+    <button id="save-settings" type="button">Save settings</button>
+  </div>
+</div>
 <script>
 (function () {
   'use strict';
